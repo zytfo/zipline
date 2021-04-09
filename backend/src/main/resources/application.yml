@@ -1,0 +1,86 @@
+coin:
+  paprika:
+    endpoint: https://api.coinpaprika.com/v1/
+logging:
+  level:
+    org:
+      hibernate: WARN
+      springframework: WARN
+zipline:
+  app:
+    api:
+      url: http://localhost:8081
+    jwtExpirationMs: 86400000
+    jwtSecret: ziplineSecretKey
+ios:
+  color: 'black'
+server:
+  port: 8081
+spring:
+  datasource:
+    password: admin!
+    url: jdbc:postgresql://localhost:5432/db
+    #    url: jdbc:postgresql://64.225.96.200:5432/db
+    #    url: jdbc:postgresql://db:5432/db
+    username: postgres
+  h2:
+    console:
+      enabled: true
+      path: /h2
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          lob:
+            non_contextual_creation: true
+  mail:
+    host: smtp.gmail.com
+    password: notfoundsoftware404
+    port: 465
+    properties:
+      mail:
+        smtp:
+          connectiontimeout: 5000
+        smtps:
+          auth: true
+          starttls:
+            enable: true
+          timeout: 8000
+        transport:
+          protocol: smtps
+    protocol: smtps
+    username: otusbackenddemo@gmail.com
+  main:
+    allow-bean-definition-overriding: true
+    banner-mode: off
+    log-startup-info: false
+management:
+  endpoint:
+    health:
+      show-details: always
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  endpoints:
+    web:
+      cors:
+        allowed-origins: "http://localhost:3000"
+        allowed-methods: "GET,POST"
+      base-path: /actuator
+      exposure:
+        include: '*'
+  metrics:
+    tags:
+      export:
+        prometheus:
+          enabled: true
+      application: zipline-backend
+cryptopanic:
+  apiKey: dbe4e841b3070f402363d3298889e05013135d2b
+  url: https://cryptopanic.com/api/v1/posts/?auth_token=
+cointelegraph:
+  urlRSS: https://cointelegraph.com/rss
