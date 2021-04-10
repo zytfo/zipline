@@ -9,9 +9,9 @@ import org.web3j.crypto.WalletUtils;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
-import org.web3j.tx.ChainId;
 import org.web3j.tx.RawTransactionManager;
 import org.web3j.tx.gas.ContractGasProvider;
+import org.web3j.tx.gas.DefaultGasProvider;
 import org.web3j.tx.gas.StaticGasProvider;
 import org.web3j.utils.Convert;
 import org.web3j.utils.Files;
@@ -31,15 +31,16 @@ import java.util.List;
  * Helper utils to communicate with Web3j API
  */
 public class Web3Helpers {
-    private static final String NODE_ADDRESS = "https://ropsten.infura.io/v3/dfa2b7d4df384d47970010b94c8a9519";
-    private static final String CONTRACT_ADDRESS = "0x434C71f42c0fbd6cCfE25D930b1cf3336f11fBbD";
-    private static final byte CHAIN_ID = ChainId.ROPSTEN;
+    private static final String ROPSTEN_NODE_ADDRESS = "https://ropsten.infura.io/v3/dfa2b7d4df384d47970010b94c8a9519";
+    private static final String BINANCE_TEST_NODE_ADDRESS = "https://data-seed-prebsc-1-s1.binance.org:8545";
+    private static final String CONTRACT_ADDRESS = "0xF4Ce23586D037cFE538c724FC1B08a130Fbc2571";
+    private static final byte CHAIN_ID = 97; // Binance test chain ID; mainnet is 56, https://docs.binance.org/smart-chain/wallet/metamask.html
 
     private static final File TEMP_WALLET_DIRECTORY = new File("/tmp/");
 
-    private static final Web3j web3 = Web3j.build(new HttpService(NODE_ADDRESS));
+    private static final Web3j web3 = Web3j.build(new HttpService(BINANCE_TEST_NODE_ADDRESS));
     // TODO: this must be calculated dynamically
-    private static final ContractGasProvider gasProvider = new StaticGasProvider(Convert.toWei("1", Convert.Unit.GWEI).toBigInteger(), BigInteger.valueOf(500000));
+    private static final ContractGasProvider gasProvider = new StaticGasProvider(Convert.toWei("20", Convert.Unit.GWEI).toBigInteger(), BigInteger.valueOf(500000));
 
     /**
      * Get a smart contract wrapper
@@ -47,8 +48,8 @@ public class Web3Helpers {
      * @param credentials to access the contract
      * @return the contract
      */
-    public static Hui721 getHuiContract(Credentials credentials) {
-        return Hui721.load(CONTRACT_ADDRESS, web3, new RawTransactionManager(web3, credentials, CHAIN_ID), gasProvider);
+    public static Zipline getContract(Credentials credentials) {
+        return Zipline.load(CONTRACT_ADDRESS, web3, new RawTransactionManager(web3, credentials, CHAIN_ID), gasProvider);
     }
 
     /**
@@ -133,9 +134,9 @@ public class Web3Helpers {
 
             // TODO: transaction send must be async
             Credentials credentials = WalletUtils.loadCredentials(password, walletFile);
-            Hui721 contract = getHuiContract(credentials);
+            Zipline contract = getContract(credentials);
             TransactionReceipt tx_result = contract.mint(credentials.getAddress(), tokenURI).send();
-            List<Hui721.TransferEventResponse> events = contract.getTransferEvents(tx_result);
+            List<Zipline.TransferEventResponse> events = contract.getTransferEvents(tx_result);
             if (events.size() != 1)
                 return new Either<>(null, "Transaction has returned bad output");
             return new Either<>(events.get(0).tokenId.longValue());
