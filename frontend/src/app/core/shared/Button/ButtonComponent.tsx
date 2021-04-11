@@ -1,5 +1,5 @@
 import React from 'react';
-import './App.css';
+import './App.less';
 import {StyledButton} from './ButtonStyles';
 
 //TODO: use own UI components instead of ANT

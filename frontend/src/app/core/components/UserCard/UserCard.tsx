@@ -12,10 +12,10 @@ import {
 } from "./UserCardStyles";
 import { Avatar, Menu } from "antd";
 import {
-  BookOutlined,
   FireOutlined,
   SmileOutlined,
   UserOutlined,
+  WalletOutlined,
 } from "@ant-design/icons/lib";
 import auth from "../../services/AuthService";
 
@@ -61,8 +61,8 @@ const UserCard = (props) => {
           <Menu.Item key="/publications" icon={<FireOutlined />}>
             <Link to={`/publications`}>Main</Link>
           </Menu.Item>
-          <Menu.Item key="/favourite" icon={<BookOutlined />}>
-            Favourite News
+          <Menu.Item key="/wallets" icon={<WalletOutlined />}>
+            <Link to={`/wallets`}>Wallets</Link>
           </Menu.Item>
         </Menu>
       </UserCardContainer>
