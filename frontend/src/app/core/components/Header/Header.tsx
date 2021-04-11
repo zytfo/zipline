@@ -13,7 +13,7 @@ const Header = (props: any) => {
 
   return (
     <OTUSHeader>
-      <Logo>Zipline</Logo>
+      <Logo>ZIPLINE</Logo>
       <Menu
         theme="dark"
         mode="horizontal"

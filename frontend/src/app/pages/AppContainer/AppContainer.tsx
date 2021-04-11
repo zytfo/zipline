@@ -11,6 +11,7 @@ import { backendService } from "../../core/services/BackendService";
 import { MainContainer } from "./AppContainerStyles";
 import UserCard from "../../core/components/UserCard/UserCard";
 import UserPage from "../UserPage/UserPage";
+import Wallets from "../Wallets/Wallets";
 const { TabPane } = Tabs;
 
 const LoggedRouter = (props) => {
@@ -53,6 +54,9 @@ const LoggedRouter = (props) => {
         </Route>
         <Route path={"/user/:username"}>
           <UserPage/>
+        </Route>
+        <Route path={"/wallets"}>
+          <Wallets/>
         </Route>
         <Redirect from="*" to="/publications" />
       </Switch>
