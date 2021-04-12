@@ -41,3 +41,20 @@ target/
 
 # Meta-files
 wallet.json
+
+/frontend/node_modules
+/.pnp
+.pnp.js
+.idea
+
+# testing
+/coverage
+
+# production
+/build
+
+# misc
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local

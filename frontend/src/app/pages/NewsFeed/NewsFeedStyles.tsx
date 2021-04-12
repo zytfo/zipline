@@ -18,8 +18,8 @@ export const NewsItem = styled.div`
   padding: 15px 20px;
   margin-bottom: 15px;
   background-color: #fff;
-  border-radius: 2px;
-  box-shadow: 0 1px 0 0 #dce1e6, 0 0 0 1px #dce1e6;
+  border-radius: 3px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.08);
 `;
 
 export const ActionArea = styled.div`

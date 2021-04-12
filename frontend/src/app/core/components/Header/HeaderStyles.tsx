@@ -3,10 +3,10 @@ import {Layout} from "antd";
 const { Header } = Layout;
 
 export const Logo = styled.span`
-  font-size: 32px;
-  color: #fff;
-  letter-spacing: 3px;
-  font-weight: bold;
+  font-size: 28px;
+  color: #F0B90B;
+  font-family: 'Amaranth', sans-serif;
+  font-weight: 700;
   float: left;
   margin: 0 24px 0 0;
 `;

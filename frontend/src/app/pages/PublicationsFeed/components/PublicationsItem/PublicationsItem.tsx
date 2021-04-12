@@ -121,7 +121,7 @@ const PublicationsItem: FunctionComponent<any> = ({
             </LikesCount>
           </Likes>
           <ActionSet>
-            <EditIcon onClick={onLikeClick} />
+            <EditIcon />
             <ConfirmDeletion
               placement="top"
               title={"Delete this publication?"}

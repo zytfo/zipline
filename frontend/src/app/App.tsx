@@ -1,5 +1,5 @@
 import React from "react";
-import "./App.css";
+import "./App.less";
 import AppContainer from "./pages/AppContainer/AppContainer";
 
 function App() {

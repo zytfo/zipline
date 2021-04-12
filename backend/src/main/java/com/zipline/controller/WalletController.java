@@ -9,6 +9,7 @@ import com.zipline.model.NFT;
 import com.zipline.model.Wallet;
 import com.zipline.service.UtilService;
 import com.zipline.service.WalletService;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiParam;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -97,9 +98,9 @@ public class WalletController {
             @ApiResponse(responseCode = "500", description = "Internal server error",
                     content = @Content(array = @ArraySchema(schema = @Schema(implementation = ErrorResponse.class))))
     })
-    @PostMapping(value = "/create", consumes = "text/plain")
+    @PostMapping(value = "/create")
     @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN') or hasRole('USER')")
-    public ResponseEntity<?> createWallet(final @ApiParam(value = "Name of the new wallet") @RequestParam("walletName") String walletName) throws Exception {
+    public ResponseEntity<?> createWallet(final @ApiParam(value = "Name of the new wallet") @RequestParam String walletName) throws Exception {
         logger.debug("REST request to create a new Wallet");
         Wallet newWallet = walletService.createWallet(userDetailsService.getUser().getId(), walletName);
         return new ResponseEntity<>(utilService.getResponseBody(modelMapper.map(newWallet, WalletDTO.class)), HttpStatus.OK);
