@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import javassist.NotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -26,6 +27,8 @@ import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -67,7 +70,7 @@ public class WalletController {
     @Operation(summary = "Get Wallets", description = "Get all wallets of the user", tags = {"wallet-controller"})
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successful operation",
-                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = Wallet.class))))})
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = WalletDTO.class))))})
     @GetMapping("/all")
     @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN') or hasRole('USER')")
     public ResponseEntity<?> getWallets() {
@@ -77,7 +80,7 @@ public class WalletController {
         final List<Wallet> wallets = walletService.getWalletsOfUser(userDetails.getId());
         for (Wallet wallet : wallets) {
             WalletDTO walletDTO = modelMapper.map(wallet, WalletDTO.class);
-            Set<Long> nfts = new HashSet<>();
+            Set<BigInteger> nfts = new HashSet<>();
             for (NFT nft : wallet.getNfts()) {
                 nfts.add(nft.getNftId());
             }
@@ -90,13 +93,13 @@ public class WalletController {
     @Operation(summary = "Create Wallet", description = "Create a new Wallet", tags = {"wallet-controller"})
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successful operation",
-                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = Wallet.class)))),
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = WalletDTO.class)))),
             @ApiResponse(responseCode = "500", description = "Internal server error",
                     content = @Content(array = @ArraySchema(schema = @Schema(implementation = ErrorResponse.class))))
     })
     @PostMapping(value = "/create", consumes = "text/plain")
     @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN') or hasRole('USER')")
-    public ResponseEntity<?> createWallet(final @ApiParam(value = "Name of the new wallet") @RequestBody String walletName) throws Exception {
+    public ResponseEntity<?> createWallet(final @ApiParam(value = "Name of the new wallet") @RequestParam("walletName") String walletName) throws Exception {
         logger.debug("REST request to create a new Wallet");
         Wallet newWallet = walletService.createWallet(userDetailsService.getUser().getId(), walletName);
         return new ResponseEntity<>(utilService.getResponseBody(modelMapper.map(newWallet, WalletDTO.class)), HttpStatus.OK);
@@ -105,21 +108,21 @@ public class WalletController {
     @Operation(summary = "Delete Wallet", description = "Delete Wallet from the user by ID", tags = {"wallet-controller"})
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successful operation",
-                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = Wallet.class)))),
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = WalletDTO.class)))),
             @ApiResponse(responseCode = "404", description = "Wallet not found",
                     content = @Content(array = @ArraySchema(schema = @Schema(implementation = ErrorResponse.class))))})
     @DeleteMapping("/{walletId}")
     @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN') or hasRole('USER')")
     public ResponseEntity<?> deleteWallet(@PathVariable Long walletId) throws Exception {
         logger.debug("REST request to delete a Wallet");
-        walletService.deleteWallet(walletId);
+        walletService.deleteWallet(userDetailsService.getUser().getId(), walletId);
         return new ResponseEntity<>(utilService.getEmptyResponseBody(), HttpStatus.OK);
     }
 
     @Operation(summary = "Import Wallet", description = "Import a Wallet", tags = {"wallet-controller"})
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successful operation",
-                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = Wallet.class))))})
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = WalletDTO.class))))})
     @PostMapping("/import")
     @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN') or hasRole('USER')")
     public ResponseEntity<?> importWallet(final @ApiParam(value = "New wallet") @RequestBody WalletImportExportDTO wallet) throws Exception {
@@ -132,10 +135,10 @@ public class WalletController {
     @Operation(summary = "Export Wallet", description = "Export a Wallet by ID", tags = {"wallet-controller"})
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successful operation",
-                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = Wallet.class)))),
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = WalletDTO.class)))),
             @ApiResponse(responseCode = "404", description = "Wallet not found",
                     content = @Content(array = @ArraySchema(schema = @Schema(implementation = ErrorResponse.class))))})
-    @PostMapping("/export/{walletId}")
+    @PostMapping("/{walletId}/export/")
     @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN') or hasRole('USER')")
     public ResponseEntity<?> exportWallet(@PathVariable Long walletId) throws Exception {
         logger.debug("REST request to export a Wallet");
@@ -143,5 +146,17 @@ public class WalletController {
         walletDTO.setWalletId(walletId);
         walletDTO.setPrivateKey(walletService.exportWallet(userDetailsService.getUser().getId(), walletId));
         return new ResponseEntity<>(utilService.getResponseBody(walletDTO), HttpStatus.OK);
+    }
+
+    @Operation(summary = "Get Wallet Balance", description = "Get balance of the wallet of the user", tags = {"wallet-controller"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful operation",
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = BigInteger.class))))})
+    @GetMapping("/{walletId}/balance")
+    @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN') or hasRole('USER')")
+    public ResponseEntity<?> getWallets(@PathVariable Long walletId) throws NotFoundException, IOException {
+        logger.debug("REST request to get balance of the Wallet of the user");
+        BigInteger balance = walletService.getWalletBalance(userDetailsService.getUser().getId(), walletId);
+        return new ResponseEntity<>(utilService.getResponseBody(balance), HttpStatus.OK);
     }
 }

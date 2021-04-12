@@ -1,5 +1,7 @@
 package com.zipline.smartcontract;
 
+import com.zipline.Zipline;
+import io.reactivex.Flowable;
 import org.bouncycastle.crypto.generators.BCrypt;
 import org.bouncycastle.util.encoders.Hex;
 import org.web3j.crypto.CipherException;
@@ -7,11 +9,12 @@ import org.web3j.crypto.Credentials;
 import org.web3j.crypto.ECKeyPair;
 import org.web3j.crypto.WalletUtils;
 import org.web3j.protocol.Web3j;
+import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
+import org.web3j.tuples.generated.Tuple4;
 import org.web3j.tx.RawTransactionManager;
 import org.web3j.tx.gas.ContractGasProvider;
-import org.web3j.tx.gas.DefaultGasProvider;
 import org.web3j.tx.gas.StaticGasProvider;
 import org.web3j.utils.Convert;
 import org.web3j.utils.Files;
@@ -53,6 +56,16 @@ public class Web3Helpers {
     }
 
     /**
+     * Get an observable to trades status changes
+     *
+     * @return the observable
+     */
+    public static Flowable<Zipline.TradeStatusChangeEventResponse> getTradesObservable() {
+        Zipline contract = getContract(Credentials.create(new ECKeyPair(BigInteger.ZERO, BigInteger.ZERO)));
+        return contract.tradeStatusChangeEventFlowable(DefaultBlockParameterName.EARLIEST, DefaultBlockParameterName.LATEST);
+    }
+
+    /*
      * Create a completely new wallet
      *
      * @param walletPassword to be used to encrypt the wallet data
@@ -80,6 +93,16 @@ public class Web3Helpers {
         String walletContent = Files.readString(walletFile);
         walletFile.delete();
         return walletContent;
+    }
+
+    /**
+     * Get balance of the wallet
+     *
+     * @param walletAddress to get balance of
+     * @return number of Wei on this wallet
+     */
+    public static BigInteger getWalletBalance(final String walletAddress) throws IOException {
+        return web3.ethGetBalance("0x" + walletAddress, DefaultBlockParameterName.LATEST).send().getBalance();
     }
 
     /**
@@ -124,25 +147,142 @@ public class Web3Helpers {
      * @param tokenURI to put into the new token
      * @return ID of the token in case of success, stringified error otherwise
      */
-    public static Either<Long, String> createNFT(final String wallet, final String password, final String tokenURI) {
+    public static Either<BigInteger, String> createNFT(final String wallet, final String password, final String tokenURI) {
+        File walletFile = null;
+        try {
+            walletFile = getWalletFile(wallet);
+            Credentials credentials = WalletUtils.loadCredentials(password, walletFile);
+            Zipline contract = getContract(credentials);
+
+            TransactionReceipt tx_result = contract.mint(credentials.getAddress(), tokenURI).send();
+            List<Zipline.TransferEventResponse> events = contract.getTransferEvents(tx_result);
+            if (events.size() != 1)
+                return new Either<>(null, "Transaction has returned bad output");
+            return new Either<>(events.get(0).tokenId);
+        } catch (Exception e) {
+            if (walletFile != null) walletFile.deleteOnExit();
+            return new Either<>(null, e.getMessage());
+        }
+    }
+
+    /**
+     * Get a trade by its ID
+     *
+     * @param wallet   the wallet
+     * @param password to the wallet
+     * @param tradeId  to get
+     * @return the trade
+     */
+    public static Trade getTradeById(final String wallet, final String password, BigInteger tradeId) throws Exception {
+        File walletFile = null;
+        try {
+            walletFile = getWalletFile(wallet);
+            Credentials credentials = WalletUtils.loadCredentials(password, walletFile);
+            Zipline contract = getContract(credentials);
+
+            Tuple4<String, BigInteger, BigInteger, Boolean> trade = contract.getTrade(tradeId).send();
+            return new Trade(trade.component1(), trade.component2(), trade.component3(), trade.component4());
+        } catch (Exception e) {
+            if (walletFile != null) walletFile.deleteOnExit();
+            throw e;
+        }
+    }
+
+    /**
+     * Open a new trade
+     *
+     * @param wallet   the wallet
+     * @param password to the wallet
+     * @param nftId    to open a trade for
+     * @param price    for the NFT
+     * @return trade ID in case of success, error otherwise
+     */
+    public static Either<BigInteger, String> openTrade(final String wallet, final String password, final BigInteger nftId, final BigInteger price) {
+        File walletFile = null;
+        try {
+            walletFile = getWalletFile(wallet);
+            Credentials credentials = WalletUtils.loadCredentials(password, walletFile);
+            Zipline contract = getContract(credentials);
+
+            TransactionReceipt tx_result = contract.openTrade(nftId, price).send();
+            List<Zipline.TradeStatusChangeEventResponse> events = contract.getTradeStatusChangeEvents(tx_result);
+            if (events.size() != 1)
+                return new Either<>(null, "Transaction has returned bad output");
+            return new Either<>(events.get(0).id);
+        } catch (Exception e) {
+            if (walletFile != null) walletFile.deleteOnExit();
+            return new Either<>(null, e.getMessage());
+        }
+    }
+
+    /**
+     * Execute a trade
+     *
+     * @param wallet    the wallet
+     * @param password  to the wallet
+     * @param tradeId   to execute
+     * @param weiAmount to transfer for this trade
+     * @return true in case of success, error otherwise
+     */
+    public static Either<Boolean, String> executeTrade(final String wallet, final String password, final BigInteger tradeId, final BigInteger weiAmount) {
+        File walletFile = null;
+        try {
+            walletFile = getWalletFile(wallet);
+            Credentials credentials = WalletUtils.loadCredentials(password, walletFile);
+            Zipline contract = getContract(credentials);
+
+            TransactionReceipt tx_result = contract.executeTrade(tradeId, weiAmount).send();
+            List<Zipline.TradeStatusChangeEventResponse> events = contract.getTradeStatusChangeEvents(tx_result);
+            if (events.size() != 1)
+                return new Either<>(null, "Transaction has returned bad output");
+            if (events.get(0).status)
+                return new Either<>(null, "Transaction has failed for some other reason");
+            return new Either<>(true);
+        } catch (Exception e) {
+            if (walletFile != null) walletFile.deleteOnExit();
+            return new Either<>(null, e.getMessage());
+        }
+    }
+
+    /**
+     * Cancel the trade
+     *
+     * @param wallet   the wallet
+     * @param password to the wallet
+     * @param tradeId  to cancel
+     * @return true in case of success, error otherwise
+     */
+    public static Either<Boolean, String> cancelTrade(final String wallet, final String password, final BigInteger tradeId) {
+        File walletFile = null;
+        try {
+            walletFile = getWalletFile(wallet);
+            Credentials credentials = WalletUtils.loadCredentials(password, walletFile);
+            Zipline contract = getContract(credentials);
+
+            TransactionReceipt tx_result = contract.cancelTrade(tradeId).send();
+            List<Zipline.TradeStatusChangeEventResponse> events = contract.getTradeStatusChangeEvents(tx_result);
+            if (events.size() != 1)
+                return new Either<>(null, "Transaction has returned bad output");
+            if (events.get(0).status)
+                return new Either<>(null, "Transaction has failed for some other reason");
+            return new Either<>(true);
+        } catch (Exception e) {
+            if (walletFile != null) walletFile.deleteOnExit();
+            return new Either<>(null, e.getMessage());
+        }
+    }
+
+    private static File getWalletFile(final String wallet) throws IOException {
         File walletFile = null;
         try {
             walletFile = File.createTempFile("wal", null, TEMP_WALLET_DIRECTORY);
             FileWriter writer = new FileWriter(walletFile);
             writer.write(wallet);
             writer.close();
-
-            // TODO: transaction send must be async
-            Credentials credentials = WalletUtils.loadCredentials(password, walletFile);
-            Zipline contract = getContract(credentials);
-            TransactionReceipt tx_result = contract.mint(credentials.getAddress(), tokenURI).send();
-            List<Zipline.TransferEventResponse> events = contract.getTransferEvents(tx_result);
-            if (events.size() != 1)
-                return new Either<>(null, "Transaction has returned bad output");
-            return new Either<>(events.get(0).tokenId.longValue());
-        } catch (Exception e) {
+            return walletFile;
+        } catch (IOException e) {
             if (walletFile != null) walletFile.deleteOnExit();
-            return new Either<>(null, e.getMessage());
+            throw e;
         }
     }
 }

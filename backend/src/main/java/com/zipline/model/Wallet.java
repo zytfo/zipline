@@ -27,7 +27,7 @@ public class Wallet {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "address", nullable = false)
+    @Column(name = "address", nullable = false, unique = true)
     private String address;
 
     /**

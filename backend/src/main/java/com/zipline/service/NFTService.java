@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import springfox.documentation.common.Either;
 
 import javax.transaction.Transactional;
+import java.math.BigInteger;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -70,7 +71,7 @@ public class NFTService {
         tokenURI.put("description", nft.getDescription());
         tokenURI.put("image_url", nft.getImageUrl());
 
-        Either<Long, String> nftId = Web3Helpers.createNFT(
+        Either<BigInteger, String> nftId = Web3Helpers.createNFT(
                 wallet.getSecretValue(),
                 Web3Helpers.getSecretForWallet(wallet.getSecretKey(), wallet.getSecretSalt()),
                 tokenURI.toString());
