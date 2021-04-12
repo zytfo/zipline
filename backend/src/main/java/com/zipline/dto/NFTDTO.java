@@ -1,5 +1,6 @@
 package com.zipline.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
@@ -17,6 +18,7 @@ import java.io.Serializable;
 public class NFTDTO implements Serializable {
     private static final long serialVersionUID = -837871729886554L;
 
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long nftId;
 
     @NotEmpty(message = "Wallet ID must not be empty")

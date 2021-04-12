@@ -140,7 +140,7 @@ public class PublicationController {
     /**
      * Create publication response entity.
      *
-     * @param content the content
+     * @param publicationDTO the publication
      * @return the response entity
      */
     @Operation(summary = "Create publication", description = "Create publication for moderator, user or admin", tags = {"publications-controller"})
@@ -152,16 +152,16 @@ public class PublicationController {
     @PostMapping(value = "/create")
     @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN') or hasRole('USER')")
     public ResponseEntity<?> createPublication(
-            final @ApiParam(value = "Content of the publication") @RequestParam("content") String content) {
+            @ApiParam(value = "The new publication") @RequestBody PublicationDTO publicationDTO) {
         logger.debug("REST request to create a new publication");
         final UserDetailsImpl userDetails = userDetailsService.getUser();
         Publication publication = new Publication();
-        publication.setTickers(utilService.extractTickers(content));
-        publication.setContent(content);
+        publication.setTickers(utilService.extractTickers(publicationDTO.getContent()));
+        publication.setContent(publicationDTO.getContent());
         publication.setCreated(LocalDateTime.now());
         publication.setCreatedBy(userDetails.getId());
         publication = publicationService.save(publication);
-        final PublicationDTO publicationDTO = modelMapper.map(publication, PublicationDTO.class);
+        publicationDTO = modelMapper.map(publication, PublicationDTO.class);
         publicationDTO.setCreatedBy(userDetails.getUsername());
         return new ResponseEntity<>(utilService.getResponseBody(publicationDTO), HttpStatus.CREATED);
     }
@@ -169,8 +169,8 @@ public class PublicationController {
     /**
      * Update publication response entity.
      *
-     * @param content       the content
-     * @param publicationId the publication id
+     * @param publicationDTO the publication
+     * @param publicationId  the publication id
      * @return the response entity
      */
     @Operation(summary = "Update publication", description = "Update publication by id for moderator, admin or user", tags = {"publications-controller"})
@@ -184,7 +184,7 @@ public class PublicationController {
     @PutMapping(value = "/{publicationId}")
     @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN') or hasRole('USER')")
     public ResponseEntity<?> updatePublication(
-            final @ApiParam(value = "Content to be updated") @RequestParam("content") String content,
+            @ApiParam(value = "Publication to be updated") @RequestBody PublicationDTO publicationDTO,
             final @ApiParam(value = "Publication id to be updated") @PathVariable(value = "publicationId") Long publicationId) {
         logger.debug("REST request to update the publication");
         final Publication loadedPublication = publicationService.getPublicationById(publicationId);
@@ -192,11 +192,11 @@ public class PublicationController {
         if (!loadedPublication.getCreatedBy().equals(userDetails.getId())) {
             throw new NoPermissionException(userDetails.getUsername(), userDetailsService.loadUserByUserId(loadedPublication.getCreatedBy()).getUsername(), "update the publication");
         }
-        loadedPublication.setContent(content);
-        loadedPublication.setTickers(utilService.extractTickers(content));
+        loadedPublication.setContent(publicationDTO.getContent());
+        loadedPublication.setTickers(utilService.extractTickers(publicationDTO.getContent()));
         loadedPublication.setUpdated(LocalDateTime.now());
         final Publication publication = publicationService.save(loadedPublication);
-        final PublicationDTO publicationDTO = modelMapper.map(publication, PublicationDTO.class);
+        publicationDTO = modelMapper.map(publication, PublicationDTO.class);
         publicationDTO.setCreatedBy(userDetails.getUsername());
         publicationDTO.setNumberOfComments(commentService.getNumberOfCommentsForPost(PostType.PUBLICATION, publicationId));
         return new ResponseEntity<>(utilService.getResponseBody(publicationDTO), HttpStatus.ACCEPTED);
