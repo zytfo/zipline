@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.math.BigInteger;
 
 /**
  * The entity NFT.
@@ -19,7 +20,7 @@ import javax.persistence.*;
 public class NFT {
     @Id
     @Column(name = "id", nullable = false)
-    private Long nftId;
+    private BigInteger nftId;
 
     @Column(name = "name", nullable = false, unique = true)
     private String name;

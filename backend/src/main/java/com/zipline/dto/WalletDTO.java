@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
+import java.math.BigInteger;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -19,5 +20,5 @@ public class WalletDTO implements Serializable {
     private long walletId;
     private String name;
     private String address;
-    private Set<Long> nftIds = new HashSet<>();
+    private Set<BigInteger> nftIds = new HashSet<>();
 }

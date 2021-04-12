@@ -3,6 +3,8 @@ package com.zipline.exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
+import java.math.BigInteger;
+
 /**
  * The type No such NFT exception.
  */
@@ -13,7 +15,7 @@ public class NoSuchNFTException extends RuntimeException {
      *
      * @param nftId the NFT id
      */
-    public NoSuchNFTException(final Long nftId) {
-        super("NFT " + nftId + " not found");
+    public NoSuchNFTException(final BigInteger nftId) {
+        super("NFT " + nftId.toString() + " not found");
     }
 }

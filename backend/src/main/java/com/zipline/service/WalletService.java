@@ -9,10 +9,21 @@ import com.zipline.smartcontract.Web3Helpers;
 import javassist.NotFoundException;
 import net.bytebuddy.utility.RandomString;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.configurationprocessor.json.JSONException;
 import org.springframework.boot.configurationprocessor.json.JSONObject;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
+import org.web3j.crypto.CipherException;
+import org.web3j.utils.Files;
 
 import javax.transaction.Transactional;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -20,6 +31,8 @@ import java.util.Optional;
 @Service
 @Transactional
 public class WalletService {
+    private static Pair<String, String> readOnlyWalletContentPassword = Pair.of("", "");
+
     UserRepository userRepository;
     WalletRepository walletRepository;
 
@@ -30,6 +43,21 @@ public class WalletService {
     public WalletService(final UserRepository userRepository, final WalletRepository walletRepository) {
         this.userRepository = userRepository;
         this.walletRepository = walletRepository;
+    }
+
+    /**
+     * Get a special wallet for read-only operations of the application itself
+     *
+     * @return the wallet content + password
+     */
+    public static Pair<String, String> getReadOnlyWallet()
+            throws IOException, InvalidAlgorithmParameterException, CipherException, NoSuchAlgorithmException, NoSuchProviderException {
+        if (!readOnlyWalletContentPassword.getFirst().isEmpty()) return readOnlyWalletContentPassword;
+
+        String password = Web3Helpers.getSecretForWallet(RandomString.make(64), RandomString.make(16));
+        String wallet = Web3Helpers.createWallet(password);
+        readOnlyWalletContentPassword = Pair.of(wallet, password);
+        return readOnlyWalletContentPassword;
     }
 
     /**
@@ -57,10 +85,12 @@ public class WalletService {
     /**
      * Delete a wallet
      *
+     * @param userId   owner of the wallet
      * @param walletId of the wallet to be deleted
      */
-    public void deleteWallet(final Long walletId) {
-        walletRepository.deleteById(walletId);
+    public void deleteWallet(final Long userId, final Long walletId) throws NotFoundException {
+        Wallet wallet = getWallet(userId, walletId);
+        walletRepository.delete(wallet);
     }
 
     /**
@@ -90,10 +120,28 @@ public class WalletService {
                 Web3Helpers.getSecretForWallet(wallet.getSecretKey(), wallet.getSecretSalt()), wallet.getSecretValue());
     }
 
+    /**
+     * Get a balance of the wallet
+     *
+     * @param userId   the wallet's owner
+     * @param walletId of the wallet
+     * @return balance of the requested wallet
+     */
+    public BigInteger getWalletBalance(final Long userId, final Long walletId) throws NotFoundException, IOException {
+        Wallet wallet = getWallet(userId, walletId);
+        return Web3Helpers.getWalletBalance(wallet.getAddress());
+    }
+
     private User getUser(final Long userId) throws NotFoundException {
         Optional<User> userOptional = userRepository.findById(userId);
         if (!userOptional.isPresent()) throw new NotFoundException("No user with ID " + userId + " found");
         return userOptional.get();
+    }
+
+    private Wallet getWallet(final Long userId, final Long walletId) throws NotFoundException {
+        return getUser(userId).getWallets().stream()
+                .filter((Wallet w) -> w.getWalletId().equals(walletId)).findFirst()
+                .orElseThrow(() -> new NoSuchWalletException(walletId));
     }
 
     private Wallet createWallet(final Long userId, final String walletName, final String privateKey) throws Exception {
