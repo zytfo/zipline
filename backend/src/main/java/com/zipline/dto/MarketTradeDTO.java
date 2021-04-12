@@ -1,11 +1,11 @@
 package com.zipline.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import groovy.transform.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
 import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.Null;
 import java.io.Serializable;
 import java.math.BigInteger;
 
@@ -18,13 +18,13 @@ import java.math.BigInteger;
 public class MarketTradeDTO implements Serializable {
     private static final long serialVersionUID = 9171916707982456622L;
 
-    @Null(message = "Trade ID is assigned automatically")
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private BigInteger tradeId;
 
-    @Null(message = "Creator ID is assigned automatically")
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long creatorUserId;
 
-    @Null(message = "Creator address is assigned automatically")
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String creatorWalletAddress;
 
     @NotEmpty(message = "NFT ID must not be empty")
@@ -33,6 +33,6 @@ public class MarketTradeDTO implements Serializable {
     @NotEmpty(message = "Price must not be empty")
     private BigInteger weiPrice;
 
-    @Null(message = "Status is assigned automatically")
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private boolean isOpen;
 }

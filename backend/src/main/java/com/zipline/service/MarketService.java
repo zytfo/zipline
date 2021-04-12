@@ -115,38 +115,40 @@ public class MarketService {
     /**
      * Open a new trade
      *
-     * @param userId   on behalf of whom to open the trade
-     * @param newTrade trade to open
+     * @param userId on behalf of whom to open the trade
+     * @param nftId  to sell
+     * @param price  for which to sell
      * @return the opened trade
      */
-    public MarketTradeDTO openTrade(final Long userId, MarketTradeDTO newTrade) throws Exception {
+    public MarketTradeDTO openTrade(final Long userId, final BigInteger nftId, final BigInteger price) throws Exception {
         // find the NFT, which the user wants to sell, in their wallets
         Wallet fromWallet = null;
-        NFT nft = null;
         for (Wallet wallet : walletRepository.findAllByOwnerId(userId)) {
             Optional<NFT> nftOptional =
-                    wallet.getNfts().stream().filter((NFT nft_) -> nft_.getNftId().equals(newTrade.getNftId())).findFirst();
+                    wallet.getNfts().stream().filter((NFT nft_) -> nft_.getNftId().equals(nftId)).findFirst();
             if (!nftOptional.isPresent()) continue;
             fromWallet = wallet;
-            nft = nftOptional.get();
         }
-        if (fromWallet == null) throw new NoSuchNFTException(newTrade.getNftId().longValue());
+        if (fromWallet == null) throw new NoSuchNFTException(nftId);
 
         // open the trade in blockchain
         Either<BigInteger, String> tradeIdEither = Web3Helpers.openTrade(
                 fromWallet.getSecretValue(),
                 Web3Helpers.getSecretForWallet(fromWallet.getSecretKey(), fromWallet.getSecretSalt()),
-                newTrade.getNftId(),
-                newTrade.getWeiPrice());
+                nftId,
+                price);
         if (tradeIdEither.getRight().isPresent())
             throw new Exception("Could not open trade: " + tradeIdEither.getRight().get());
 
         // fill the trade object fields and give it back as a result
-        newTrade.setTradeId(tradeIdEither.getLeft().get());
-        newTrade.setCreatorUserId(userId);
-        newTrade.setCreatorWalletAddress(fromWallet.getAddress());
-        newTrade.setOpen(true);
-        return newTrade;
+        MarketTradeDTO trade = new MarketTradeDTO();
+        trade.setTradeId(tradeIdEither.getLeft().get());
+        trade.setCreatorUserId(userId);
+        trade.setCreatorWalletAddress(fromWallet.getAddress());
+        trade.setNftId(nftId);
+        trade.setWeiPrice(price);
+        trade.setOpen(true);
+        return trade;
     }
 
     /**

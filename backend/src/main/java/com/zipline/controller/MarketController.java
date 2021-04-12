@@ -91,10 +91,10 @@ public class MarketController {
             @ApiResponse(responseCode = "500", description = "Internal server error",
                     content = @Content(array = @ArraySchema(schema = @Schema(implementation = ErrorResponse.class))))
     })
-    @PostMapping(value = "/trades/open", consumes = "application/json")
+    @PostMapping(value = "/trades/open/{nftId}/{price}")
     @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN') or hasRole('USER')")
-    public ResponseEntity<?> openTrade(final @ApiParam(value = "New trade") @RequestBody MarketTradeDTO tradeDTO) throws Exception {
-        return new ResponseEntity<>(utilService.getResponseBody(marketService.openTrade(userDetailsService.getUser().getId(), tradeDTO)), HttpStatus.OK);
+    public ResponseEntity<?> openTrade(@PathVariable BigInteger nftId, @PathVariable BigInteger price) throws Exception {
+        return new ResponseEntity<>(utilService.getResponseBody(marketService.openTrade(userDetailsService.getUser().getId(), nftId, price)), HttpStatus.OK);
     }
 
     @Operation(summary = "Execute trade", description = "Execute the trade buying an NFT", tags = {"market-controller"})
