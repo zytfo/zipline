@@ -20,8 +20,8 @@ public class ZiplineBackendApplication extends SpringBootServletInitializer impl
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new PerClientRateLimitInterceptor())
-                .addPathPatterns("/api/**");
+//        registry.addInterceptor(new PerClientRateLimitInterceptor())
+//                .addPathPatterns("/api/**");
     }
 
     @Bean
