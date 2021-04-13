@@ -15,9 +15,9 @@ import {
 import { walletService } from "./services/WalletService";
 import { backendService } from "../../core/services/BackendService";
 import { Button, Input, message, Modal, Result, Skeleton, Spin } from "antd";
-import {CopyOutlined, WalletOutlined} from "@ant-design/icons/lib";
+import { CopyOutlined, WalletOutlined } from "@ant-design/icons/lib";
 
-const Wallets = (props) => {
+const Wallets = () => {
   const [wallets, setWallets] = useState<any[]>([]);
   const [noWallets, setNoWallets] = useState<boolean>(false);
   const [newWallet, setNewWallet] = useState<boolean>(false);
@@ -47,7 +47,7 @@ const Wallets = (props) => {
     walletService
       .newWallet(walletName)
       .then((response) => {
-        console.log(response.data);
+        setWallets((oldContent) => [response.data.data, ...oldContent]);
         setNewWallet(false);
         setWalletName("");
         if (noWallets) {
@@ -105,7 +105,9 @@ const Wallets = (props) => {
 
   return (
     <WalletsContainer>
-      {wallets.length === 0 && <Skeleton paragraph={{ rows: 3 }} active />}
+      {wallets.length === 0 && !noWallets && (
+        <Skeleton paragraph={{ rows: 3 }} active />
+      )}
       {noWallets && (
         <Result
           icon={<WalletOutlined />}
@@ -194,8 +196,8 @@ const Wallets = (props) => {
           </Button>
         </ImportWalletContainer>
       )}
-      {wallets.map((wallet, index) => (
-        <Wallet key={index}>
+      {wallets.map((wallet) => (
+        <Wallet key={wallet.walletId}>
           <WalletName>{wallet.name}</WalletName>
           <div>Address: 0x{wallet.address}</div>
           <WalletActions>

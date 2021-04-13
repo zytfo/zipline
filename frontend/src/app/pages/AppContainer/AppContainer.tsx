@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Layout, Tabs } from "antd";
+import {BackTop, Layout, Tabs, notification, Button} from "antd";
 import Header from "../../core/components/Header/Header";
 import { Redirect, Route, Switch } from "react-router-dom";
 import auth from "../../core/services/AuthService";
@@ -12,6 +12,8 @@ import { MainContainer } from "./AppContainerStyles";
 import UserCard from "../../core/components/UserCard/UserCard";
 import UserPage from "../UserPage/UserPage";
 import Wallets from "../Wallets/Wallets";
+import NftPage from "../NftPage/NftPage";
+import Marketplace from "../Marketplace/Marketplace";
 const { TabPane } = Tabs;
 
 const LoggedRouter = (props) => {
@@ -27,6 +29,26 @@ const LoggedRouter = (props) => {
         .catch((error) => {
           backendService.errorHandler(error.response);
         });
+    }
+
+    if (!auth.hasAcceptedTerms()) {
+      const btn = (
+        <Button type="primary" onClick={() => {
+          notification.close("cookie-window");
+          auth.saveTerms();
+        }}>
+          Confirm
+        </Button>
+      );
+      const cookiesNotification = {
+        message: 'Data Protection',
+        description:
+          'This website uses necessary cookies to improve your experience',
+        duration: 0,
+        btn,
+        key: "cookie-window"
+      };
+      notification.open(cookiesNotification);
     }
   }, []);
 
@@ -53,10 +75,16 @@ const LoggedRouter = (props) => {
           </section>
         </Route>
         <Route path={"/user/:username"}>
-          <UserPage/>
+          <UserPage />
         </Route>
         <Route path={"/wallets"}>
-          <Wallets/>
+          <Wallets />
+        </Route>
+        <Route path={"/nft"}>
+          <NftPage />
+        </Route>
+        <Route path={"/marketplace"}>
+          <Marketplace />
         </Route>
         <Redirect from="*" to="/publications" />
       </Switch>
@@ -97,6 +125,7 @@ const AppContainer = () => {
         </Route>
         <PrivateRoute path="/" component={LoggedRouter} />
       </Switch>
+      <BackTop />
     </Layout>
   );
 };

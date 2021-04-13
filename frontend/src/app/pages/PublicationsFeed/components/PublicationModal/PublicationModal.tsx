@@ -1,5 +1,5 @@
 import React, { FunctionComponent, useEffect, useState } from "react";
-import { withRouter } from "react-router-dom";
+import { Link, withRouter } from "react-router-dom";
 import moment from "moment";
 import { QuestionCircleOutlined } from "@ant-design/icons/lib";
 import { publicationsService } from "../../services/PublicationsService";
@@ -184,7 +184,16 @@ const PublicationModal: FunctionComponent<any> = ({
         ]}
       >
         <AuthorContainer>
-          <AuthorTitle>{publication?.createdBy}</AuthorTitle>
+          <AuthorTitle>
+            <Link
+              to={`/user/${publication?.createdBy}`}
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+            >
+              {publication?.createdBy}
+            </Link>
+          </AuthorTitle>
           <DateInfo>{moment(publication?.created).format("LLL")}</DateInfo>
         </AuthorContainer>
         <Highlighter

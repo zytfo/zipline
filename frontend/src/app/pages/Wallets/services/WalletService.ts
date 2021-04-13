@@ -7,7 +7,7 @@ class WalletService {
 
   newWallet(content: string) {
     const params = {
-      message: content,
+      walletName: content,
     };
     return backendService.post(
       backendService.API + `wallets/create`,
@@ -25,7 +25,7 @@ class WalletService {
 
   exportWallet(id: number) {
     return backendService.post(
-      backendService.API + `wallets/export/${id}`,
+      backendService.API + `wallets/${id}/export/`,
       {},
       {}
     );

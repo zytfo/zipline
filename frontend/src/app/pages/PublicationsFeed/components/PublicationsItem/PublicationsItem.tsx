@@ -1,5 +1,5 @@
 import React, { FunctionComponent, useState } from "react";
-import { withRouter } from "react-router-dom";
+import { Link, withRouter } from "react-router-dom";
 import moment from "moment";
 import { publicationsService } from "../../services/PublicationsService";
 import { backendService } from "../../../../core/services/BackendService";
@@ -94,7 +94,16 @@ const PublicationsItem: FunctionComponent<any> = ({
       >
         <ActionArea onClick={openPublication}>
           <AuthorContainer>
-            <AuthorTitle>Posted by {item.createdBy}</AuthorTitle>
+            <AuthorTitle>
+              <Link
+                to={`/user/${item.createdBy}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              >
+                Posted by {item.createdBy}
+              </Link>
+            </AuthorTitle>
             <DateInfo>{moment(item.created).format("LLL")}</DateInfo>
           </AuthorContainer>
           <PublicationContent>

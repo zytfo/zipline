@@ -12,7 +12,8 @@ import {
 } from "./UserCardStyles";
 import { Avatar, Menu } from "antd";
 import {
-  FireOutlined,
+  BankOutlined,
+  FireOutlined, ShopOutlined,
   SmileOutlined,
   UserOutlined,
   WalletOutlined,
@@ -61,8 +62,14 @@ const UserCard = (props) => {
           <Menu.Item key="/publications" icon={<FireOutlined />}>
             <Link to={`/publications`}>Main</Link>
           </Menu.Item>
+          <Menu.Item key="/marketplace" icon={<ShopOutlined />}>
+            <Link to={`/marketplace`}>Marketplace</Link>
+          </Menu.Item>
           <Menu.Item key="/wallets" icon={<WalletOutlined />}>
             <Link to={`/wallets`}>Wallets</Link>
+          </Menu.Item>
+          <Menu.Item key="/nft" icon={<BankOutlined />}>
+            <Link to={`/nft`}>NFT</Link>
           </Menu.Item>
         </Menu>
       </UserCardContainer>
