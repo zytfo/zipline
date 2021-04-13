@@ -13,6 +13,7 @@ import com.zipline.smartcontract.Trade;
 import com.zipline.smartcontract.Web3Helpers;
 import io.reactivex.functions.Consumer;
 import javassist.NotFoundException;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
 import org.springframework.data.util.Pair;
@@ -24,24 +25,33 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * The type Market service.
+ */
 @Service
 @Transactional
 public class MarketService {
-    static HashMap<BigInteger, MarketTradeDTO> allTrades = new HashMap<>();
-    static HashMap<BigInteger, MarketTradeDTO> openTrades = new HashMap<>();
+    private final UserRepository userRepository;
+    private final WalletRepository walletRepository;
+    private final NFTRepository nftRepository;
+    private final HashMap<BigInteger, MarketTradeDTO> allTrades;
+    private final HashMap<BigInteger, MarketTradeDTO> openTrades;
 
-    UserRepository userRepository;
-    WalletRepository walletRepository;
-    NFTRepository nftRepository;
 
     /**
      * Instantiates a new Market service.
+     *
+     * @param userRepository   the user repository
+     * @param walletRepository the wallet repository
+     * @param nftRepository    the nft repository
      */
     @Autowired
     public MarketService(final UserRepository userRepository, final WalletRepository walletRepository, final NFTRepository nftRepository) {
         this.userRepository = userRepository;
         this.walletRepository = walletRepository;
         this.nftRepository = nftRepository;
+        this.allTrades = new HashMap<>();
+        this.openTrades = new HashMap<>();
 
         // process the events of market change
         Web3Helpers.getTradesObservable().subscribe(new Consumer<Zipline.TradeStatusChangeEventResponse>() {
@@ -109,7 +119,36 @@ public class MarketService {
      * @return list of user's trades
      */
     public List<MarketTradeDTO> getAllTradesOfUser(final Long userId) {
-        return allTrades.values().stream().filter((MarketTradeDTO trade) -> trade.getCreatorUserId().equals(userId)).collect(Collectors.toList());
+        return allTrades.values().stream().filter((MarketTradeDTO trade) -> Objects.nonNull(trade.getCreatorUserId()) && trade.getCreatorUserId().equals(userId)).collect(Collectors.toList());
+    }
+
+    /**
+     * Check if trades are opened list.
+     *
+     * @param tradesIds the trades
+     * @return the list
+     */
+    public List<Long> checkAndGetOpenedTrades(final List<Long> tradesIds) {
+        final List<Long> allTradesIds = allTrades.keySet().stream().map(BigInteger::longValue).collect(Collectors.toList());
+        for (Long tradeId: tradesIds) {
+            if (!(allTradesIds.contains(tradeId)))
+                throw new NoSuchOpenedTradeException(tradeId);
+        }
+        return tradesIds;
+    }
+
+    /**
+     * Gets trades by trade ids.
+     *
+     * @param tradesIds the trades ids
+     * @return the trades by trade ids
+     */
+    public List<MarketTradeDTO> getTradesByTradeIds(final List<Long> tradesIds) {
+        List<MarketTradeDTO> marketTradeDTOs = new ArrayList<>();
+        for (Long tradeId: tradesIds) {
+            marketTradeDTOs.add(allTrades.get(BigInteger.valueOf(tradeId)));
+        }
+        return marketTradeDTOs;
     }
 
     /**
@@ -119,6 +158,7 @@ public class MarketService {
      * @param nftId  to sell
      * @param price  for which to sell
      * @return the opened trade
+     * @throws Exception the exception
      */
     public MarketTradeDTO openTrade(final Long userId, final BigInteger nftId, final BigInteger price) throws Exception {
         // find the NFT, which the user wants to sell, in their wallets
@@ -157,6 +197,7 @@ public class MarketService {
      * @param userId   on behalf of whom to execute trade
      * @param tradeId  of trade to be executed
      * @param walletId of the user to use to execute the trade
+     * @throws Exception the exception
      */
     public void executeTrade(final Long userId, final BigInteger tradeId, final Long walletId) throws Exception {
         MarketTradeDTO trade = allTrades.get(tradeId);
@@ -182,6 +223,7 @@ public class MarketService {
      *
      * @param userId  who posted this trade
      * @param tradeId to cancel
+     * @throws Exception the exception
      */
     public void cancelTrade(final Long userId, final BigInteger tradeId) throws Exception {
         MarketTradeDTO trade = allTrades.get(tradeId);
