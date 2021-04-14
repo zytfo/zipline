@@ -57,6 +57,12 @@ spring:
     allow-bean-definition-overriding: true
     banner-mode: off
     log-startup-info: false
+  servlet:
+    multipart:
+      enabled: true
+      file-size-threshold: 2KB
+      max-file-size: 10MB
+      max-request-size: 10MB
 management:
   endpoint:
     health:
