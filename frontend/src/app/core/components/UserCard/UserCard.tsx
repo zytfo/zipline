@@ -12,7 +12,8 @@ import {
 } from "./UserCardStyles";
 import { Avatar, Menu } from "antd";
 import {
-  FireOutlined,
+  BankOutlined,
+  FireOutlined, ShopOutlined,
   SmileOutlined,
   UserOutlined,
   WalletOutlined,
@@ -34,6 +35,9 @@ const UserCard = (props) => {
       setCurrentItem(["/publications"]);
     } else {
       setCurrentItem([props.location.pathname]);
+    }
+    if (props.location.pathname.includes("marketplace")) {
+      setCurrentItem(["/marketplace/"]);
     }
   }, [props.location.key]);
 
@@ -61,8 +65,14 @@ const UserCard = (props) => {
           <Menu.Item key="/publications" icon={<FireOutlined />}>
             <Link to={`/publications`}>Main</Link>
           </Menu.Item>
+          <Menu.Item key="/marketplace/" icon={<ShopOutlined />}>
+            <Link to={`/marketplace/all`}>Marketplace</Link>
+          </Menu.Item>
           <Menu.Item key="/wallets" icon={<WalletOutlined />}>
             <Link to={`/wallets`}>Wallets</Link>
+          </Menu.Item>
+          <Menu.Item key="/nft" icon={<BankOutlined />}>
+            <Link to={`/nft`}>NFT</Link>
           </Menu.Item>
         </Menu>
       </UserCardContainer>

@@ -7,13 +7,17 @@ class PublicationsService {
    * @param tickersToSearch
    * @param creator
    */
-  getPublications(pageNumber: number, tickersToSearch: string[], creator: string) {
+  getPublications(
+    pageNumber: number,
+    tickersToSearch: string[],
+    creator: string
+  ) {
     const params = {
       pageNumber,
       pageSize: 10,
       sortDirection: "DESC",
       tickers: tickersToSearch.join(", "),
-      createdBy: creator
+      createdBy: creator,
     };
     return backendService.get(backendService.API + `publication/`, {
       params,
@@ -56,13 +60,13 @@ class PublicationsService {
    * @param value
    */
   newPublication(value: string) {
-    const params = {
+    const body = {
       content: value,
     };
     return backendService.post(
       backendService.API + `publication/create`,
-      {},
-      { params }
+      body,
+      {}
     );
   }
 

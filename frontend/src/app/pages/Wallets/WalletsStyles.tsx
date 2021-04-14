@@ -33,6 +33,7 @@ export const WalletActions = styled.div`
 `;
 
 export const Wallet = styled.div`
+  cursor: pointer;
   padding: 15px 20px;
   margin-bottom: 15px;
   background-color: #fff;

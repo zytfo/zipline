@@ -5,10 +5,12 @@ class Auth {
   TOKEN_KEY = "_token";
   token: string | null = null;
   metadata: any = null;
+  terms: boolean = false;
 
   constructor() {
     this.token = cookieService.get(this.TOKEN_KEY);
     this.metadata = cookieService.get("_metadata");
+    this.terms = cookieService.get("_cookies");
   }
 
   /**
@@ -23,6 +25,13 @@ class Auth {
    */
   hasMetadata() {
     return this.metadata;
+  }
+
+  /**
+   * Returns if user accepted terms
+   */
+  hasAcceptedTerms() {
+    return this.terms;
   }
 
   /**
@@ -60,6 +69,16 @@ class Auth {
   }
 
   /**
+   * Saves user agreement with cookies
+   */
+  saveTerms() {
+    cookieService.set("_cookies", JSON.stringify(true), {
+      path: "/",
+    });
+    this.terms = true;
+  }
+
+  /**
    * Deletes authentication token
    */
   deleteToken() {
@@ -81,6 +100,13 @@ class Auth {
   }
 
   /**
+   * Deletes terms acceptance
+   */
+  deleteTerms() {
+    cookieService.remove("_cookies");
+  }
+
+  /**
    * Logs in user
    * @param user
    */
@@ -98,6 +124,8 @@ class Auth {
     this.token = null;
     this.deleteToken();
     this.deleteRoles();
+    this.deleteMetadata();
+    this.deleteTerms();
   }
 }
 

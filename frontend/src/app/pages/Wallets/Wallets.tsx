@@ -14,10 +14,20 @@ import {
 } from "./WalletsStyles";
 import { walletService } from "./services/WalletService";
 import { backendService } from "../../core/services/BackendService";
-import { Button, Input, message, Modal, Result, Skeleton, Spin } from "antd";
-import {CopyOutlined, WalletOutlined} from "@ant-design/icons/lib";
+import {
+  Button,
+  Input,
+  message,
+  Modal,
+  Result,
+  Skeleton,
+  Spin,
+  Typography,
+} from "antd";
+import { CopyOutlined, WalletOutlined } from "@ant-design/icons/lib";
+const { Paragraph } = Typography;
 
-const Wallets = (props) => {
+const Wallets = () => {
   const [wallets, setWallets] = useState<any[]>([]);
   const [noWallets, setNoWallets] = useState<boolean>(false);
   const [newWallet, setNewWallet] = useState<boolean>(false);
@@ -28,6 +38,14 @@ const Wallets = (props) => {
 
   const [importForm, setImportForm] = useState<boolean>();
   const [importPrivateKey, setImportPrivateKey] = useState<string>("");
+
+  const [visibleWalletDetails, setVisibleWalletDetails] = useState<boolean>(
+    false
+  );
+  const [walletData, setWalletData] = useState<any>(null);
+  const [walletWithdrawals, setWalletWithdrawals] = useState<any>(null);
+  const [walletBalance, setWalletBalance] = useState<any>(null);
+  const [withdrawalLoading, setWithdrawalLoading] = useState<boolean>(false);
 
   useEffect(() => {
     walletService
@@ -43,11 +61,36 @@ const Wallets = (props) => {
       });
   }, []);
 
+  useEffect(() => {
+    if (walletData) {
+      getBalanceAndWithdrawals(walletData);
+    }
+  }, [walletData]);
+
+  const getBalanceAndWithdrawals = (wallet) => {
+    walletService
+      .getBalance(wallet.walletId)
+      .then((response) => {
+        setWalletBalance(response.data.data);
+      })
+      .catch((error) => {
+        backendService.errorHandler(error.response);
+      });
+    walletService
+      .getWithdrawals(wallet.walletId)
+      .then((response) => {
+        setWalletWithdrawals(response.data.data);
+      })
+      .catch((error) => {
+        backendService.errorHandler(error.response);
+      });
+  };
+
   const createNewWallet = () => {
     walletService
       .newWallet(walletName)
       .then((response) => {
-        console.log(response.data);
+        setWallets((oldContent) => [response.data.data, ...oldContent]);
         setNewWallet(false);
         setWalletName("");
         if (noWallets) {
@@ -103,9 +146,36 @@ const Wallets = (props) => {
       .catch((error) => backendService.errorHandler(error.response));
   };
 
+  const closeWalletDetails = () => {
+    setVisibleWalletDetails(false);
+    setWalletData(null);
+    setWalletWithdrawals(null);
+    setWalletBalance(null);
+  };
+
+  const openWalletDetails = (wallet: any) => {
+    setVisibleWalletDetails(true);
+    setWalletData(wallet);
+  };
+
+  const withdrawWallet = () => {
+    setWithdrawalLoading(true);
+    walletService
+      .withdrawWallet(walletData.walletId)
+      .then(() => {
+        setWalletBalance(null);
+        setWalletWithdrawals(null);
+        setWithdrawalLoading(false);
+        getBalanceAndWithdrawals(walletData);
+      })
+      .catch((error) => backendService.errorHandler(error.response));
+  };
+
   return (
     <WalletsContainer>
-      {wallets.length === 0 && <Skeleton paragraph={{ rows: 3 }} active />}
+      {wallets.length === 0 && !noWallets && (
+        <Skeleton paragraph={{ rows: 3 }} active />
+      )}
       {noWallets && (
         <Result
           icon={<WalletOutlined />}
@@ -194,15 +264,23 @@ const Wallets = (props) => {
           </Button>
         </ImportWalletContainer>
       )}
-      {wallets.map((wallet, index) => (
-        <Wallet key={index}>
+      {wallets.map((wallet) => (
+        <Wallet key={wallet.walletId} onClick={() => openWalletDetails(wallet)}>
           <WalletName>{wallet.name}</WalletName>
           <div>Address: 0x{wallet.address}</div>
           <WalletActions>
-            <ExportIcon onClick={() => exportWallet(wallet.walletId)} />
+            <ExportIcon
+              onClick={(e) => {
+                e.stopPropagation();
+                exportWallet(wallet.walletId);
+              }}
+            />
             <DeleteIcon
               twoToneColor="red"
-              onClick={() => deleteWallet(wallet.walletId)}
+              onClick={(e) => {
+                e.stopPropagation();
+                deleteWallet(wallet.walletId);
+              }}
             />
           </WalletActions>
         </Wallet>
@@ -229,6 +307,50 @@ const Wallets = (props) => {
             </>
           )}
         </PrivateKeyContent>
+      </Modal>
+      <Modal
+        visible={visibleWalletDetails}
+        title="Wallet Details"
+        onCancel={closeWalletDetails}
+        footer={[
+          <Button key="back" onClick={closeWalletDetails}>
+            Cancel
+          </Button>,
+        ]}
+      >
+        {walletData ? (
+          <Paragraph> Address: 0x{walletData.address}</Paragraph>
+        ) : (
+          <Spin size="small" />
+        )}
+        <Paragraph>
+          Balance:{" "}
+          {walletBalance || walletBalance === 0 ? (
+            `${walletBalance / 1000000000000000000} BNB`
+          ) : (
+            <Spin size="small" />
+          )}
+        </Paragraph>
+        <Paragraph>
+          Withdrawals:{" "}
+          {walletWithdrawals || walletWithdrawals === 0 ? (
+            <>
+              {walletWithdrawals / 1000000000000000000} BNB
+              <div>
+                <Button
+                  loading={withdrawalLoading}
+                  type="primary"
+                  onClick={withdrawWallet}
+                  disabled={walletWithdrawals === 0}
+                >
+                  Withdraw
+                </Button>
+              </div>
+            </>
+          ) : (
+            <Spin size="small" />
+          )}
+        </Paragraph>
       </Modal>
     </WalletsContainer>
   );
