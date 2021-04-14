@@ -1,49 +1,43 @@
 package com.zipline.service;
 
 import com.zipline.exception.NoSuchWalletException;
-import com.zipline.model.NFT;
 import com.zipline.model.User;
 import com.zipline.model.Wallet;
-import com.zipline.repository.NFTRepository;
 import com.zipline.repository.UserRepository;
 import com.zipline.repository.WalletRepository;
 import com.zipline.smartcontract.Web3Helpers;
 import javassist.NotFoundException;
 import net.bytebuddy.utility.RandomString;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.configurationprocessor.json.JSONException;
 import org.springframework.boot.configurationprocessor.json.JSONObject;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.web3j.crypto.CipherException;
-import org.web3j.utils.Files;
 
 import javax.transaction.Transactional;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
 public class WalletService {
     private static Pair<String, String> readOnlyWalletContentPassword = Pair.of("", "");
 
-    UserRepository userRepository;
-    WalletRepository walletRepository;
-    NFTService nftService;
-
+    private final Web3Helpers web3Helpers;
+    private final UserRepository userRepository;
+    private final WalletRepository walletRepository;
+    private final NFTService nftService;
 
     /**
      * Instantiates a new Wallet service.
      */
     @Autowired
-    public WalletService(final UserRepository userRepository, final WalletRepository walletRepository, final NFTService nftService) {
+    public WalletService(Web3Helpers web3Helpers, final UserRepository userRepository, final WalletRepository walletRepository, final NFTService nftService) {
+        this.web3Helpers = web3Helpers;
         this.userRepository = userRepository;
         this.walletRepository = walletRepository;
         this.nftService = nftService;
@@ -122,8 +116,8 @@ public class WalletService {
         Wallet wallet = getUser(userId).getWallets().stream()
                 .filter((Wallet w) -> w.getWalletId().equals(walletId)).findFirst()
                 .orElseThrow(() -> new NoSuchWalletException(walletId));
-        return Web3Helpers.getWalletPK(
-                Web3Helpers.getSecretForWallet(wallet.getSecretKey(), wallet.getSecretSalt()), wallet.getSecretValue());
+        return web3Helpers.getWalletPK(
+                web3Helpers.getSecretForWallet(wallet.getSecretKey(), wallet.getSecretSalt()), wallet.getSecretValue());
     }
 
     /**
@@ -135,7 +129,7 @@ public class WalletService {
      */
     public BigInteger getWalletBalance(final Long userId, final Long walletId) throws NotFoundException, IOException {
         Wallet wallet = getWallet(userId, walletId);
-        return Web3Helpers.getWalletBalance(wallet.getAddress());
+        return web3Helpers.getWalletBalance(wallet.getAddress());
     }
 
     /**
@@ -147,9 +141,9 @@ public class WalletService {
      */
     public BigInteger getWalletPendingWithdrawals(final Long userId, final Long walletId) throws Exception {
         Wallet wallet = getWallet(userId, walletId);
-        return Web3Helpers.getWalletPendingWithdrawals(
+        return web3Helpers.getWalletPendingWithdrawals(
                 wallet.getSecretValue(),
-                Web3Helpers.getSecretForWallet(wallet.getSecretKey(), wallet.getSecretSalt()),
+                web3Helpers.getSecretForWallet(wallet.getSecretKey(), wallet.getSecretSalt()),
                 wallet.getAddress());
     }
 
@@ -162,9 +156,9 @@ public class WalletService {
      */
     public void withdrawWallet(final Long userId, final Long walletId) throws Exception {
         Wallet wallet = getWallet(userId, walletId);
-        Web3Helpers.withdrawWallet(
+        web3Helpers.withdrawWallet(
                 wallet.getSecretValue(),
-                Web3Helpers.getSecretForWallet(wallet.getSecretKey(), wallet.getSecretSalt()));
+                web3Helpers.getSecretForWallet(wallet.getSecretKey(), wallet.getSecretSalt()));
     }
 
     private User getUser(final Long userId) throws NotFoundException {
@@ -186,9 +180,9 @@ public class WalletService {
         String salt = RandomString.make(16);
         String wallet;
         if (privateKey != null)
-            wallet = Web3Helpers.createWallet(Web3Helpers.getSecretForWallet(key, salt), privateKey);
+            wallet = web3Helpers.createWallet(web3Helpers.getSecretForWallet(key, salt), privateKey);
         else
-            wallet = Web3Helpers.createWallet(Web3Helpers.getSecretForWallet(key, salt));
+            wallet = web3Helpers.createWallet(web3Helpers.getSecretForWallet(key, salt));
         JSONObject walletJson = new JSONObject(wallet);
 
         Wallet newWallet = new Wallet(walletName, walletJson.getString("address"), key, salt, wallet, user);

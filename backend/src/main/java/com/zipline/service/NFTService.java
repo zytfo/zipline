@@ -5,7 +5,6 @@ import com.zipline.dto.NFTDTO;
 import com.zipline.exception.NoSuchNFTException;
 import com.zipline.exception.NoSuchWalletException;
 import com.zipline.model.Wallet;
-import com.zipline.repository.NFTRepository;
 import com.zipline.repository.UserRepository;
 import com.zipline.repository.WalletRepository;
 import com.zipline.smartcontract.Web3Helpers;
@@ -22,7 +21,6 @@ import springfox.documentation.common.Either;
 import javax.transaction.Transactional;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -33,6 +31,7 @@ public class NFTService implements Consumer<Zipline.TransferEventResponse> {
     private static final String nullAddress = "0000000000000000000000000000000000000000";
 
     private static final Logger logger = LoggerFactory.getLogger(LikeService.class);
+    private final Web3Helpers web3Helpers;
     private final UserRepository userRepository;
     private final WalletRepository walletRepository;
 
@@ -41,14 +40,16 @@ public class NFTService implements Consumer<Zipline.TransferEventResponse> {
      *
      * @param userRepository   the user repository
      * @param walletRepository the wallet repository
+     * @param web3Helpers      the Web3 helpers
      */
     @Autowired
-    public NFTService(final NFTRepository nftRepository_, UserRepository userRepository, WalletRepository walletRepository) {
+    public NFTService(UserRepository userRepository, WalletRepository walletRepository, Web3Helpers h, Web3Helpers web3Helpers) {
         this.userRepository = userRepository;
         this.walletRepository = walletRepository;
+        this.web3Helpers = web3Helpers;
 
         // process the events of NFT ownership transferred
-        Web3Helpers.getNFTTransferObservable().subscribe(this);
+        web3Helpers.getNFTTransferObservable().subscribe(this);
     }
 
     @Transactional
@@ -71,7 +72,7 @@ public class NFTService implements Consumer<Zipline.TransferEventResponse> {
             currentNft = new NFTDTO();
             currentNft.setNftId(nftId);
             Pair<String, String> readonlyWallet = WalletService.getReadOnlyWallet();
-            String tokenUri = Web3Helpers.getNftById(readonlyWallet.getFirst(), readonlyWallet.getSecond(), nftId);
+            String tokenUri = web3Helpers.getNftById(readonlyWallet.getFirst(), readonlyWallet.getSecond(), nftId);
             try {
                 JSONObject jsonUri = new JSONObject(tokenUri);
                 currentNft.setName(jsonUri.getString("name"));
@@ -172,9 +173,9 @@ public class NFTService implements Consumer<Zipline.TransferEventResponse> {
         tokenURI.put("external_link", nft.getExternalLink());
         tokenURI.put("image_url", nft.getImageUrl());
 
-        Either<BigInteger, String> nftId = Web3Helpers.createNFT(
+        Either<BigInteger, String> nftId = web3Helpers.createNFT(
                 wallet.getSecretValue(),
-                Web3Helpers.getSecretForWallet(wallet.getSecretKey(), wallet.getSecretSalt()),
+                web3Helpers.getSecretForWallet(wallet.getSecretKey(), wallet.getSecretSalt()),
                 tokenURI.toString());
         nft.setNftId(nftId.getLeft().orElseThrow(() -> new Exception("Could not create NFT: " + nftId.getRight().get())));
         return nft;

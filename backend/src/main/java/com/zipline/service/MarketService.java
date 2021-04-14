@@ -4,7 +4,6 @@ import com.zipline.Zipline;
 import com.zipline.dto.MarketTradeDTO;
 import com.zipline.dto.NFTDTO;
 import com.zipline.exception.*;
-import com.zipline.model.NFT;
 import com.zipline.model.User;
 import com.zipline.model.Wallet;
 import com.zipline.repository.NFTRepository;
@@ -14,7 +13,6 @@ import com.zipline.smartcontract.Trade;
 import com.zipline.smartcontract.Web3Helpers;
 import io.reactivex.functions.Consumer;
 import javassist.NotFoundException;
-import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
 import org.springframework.data.util.Pair;
@@ -32,6 +30,7 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class MarketService {
+    private final Web3Helpers web3Helpers;
     private final UserRepository userRepository;
     private final WalletRepository walletRepository;
     private final NFTRepository nftRepository;
@@ -42,12 +41,14 @@ public class MarketService {
     /**
      * Instantiates a new Market service.
      *
+     * @param web3Helpers
      * @param userRepository   the user repository
      * @param walletRepository the wallet repository
      * @param nftRepository    the nft repository
      */
     @Autowired
-    public MarketService(final UserRepository userRepository, final WalletRepository walletRepository, final NFTRepository nftRepository, final NFTService nftService) {
+    public MarketService(Web3Helpers web3Helpers, final UserRepository userRepository, final WalletRepository walletRepository, final NFTRepository nftRepository, final NFTService nftService) {
+        this.web3Helpers = web3Helpers;
         this.userRepository = userRepository;
         this.walletRepository = walletRepository;
         this.nftRepository = nftRepository;
@@ -56,7 +57,7 @@ public class MarketService {
         this.openTrades = new HashMap<>();
 
         // process the events of market change
-        Web3Helpers.getTradesObservable().subscribe(new Consumer<Zipline.TradeStatusChangeEventResponse>() {
+        web3Helpers.getTradesObservable().subscribe(new Consumer<Zipline.TradeStatusChangeEventResponse>() {
             @Override
             public void accept(Zipline.TradeStatusChangeEventResponse tradeStatusChangeEventResponse) throws Exception {
                 // replay all events  (doesn't matter from the performance POV, as we need
@@ -73,7 +74,7 @@ public class MarketService {
 
                 // memorize the new trade
                 Pair<String, String> readOnlyWallet = WalletService.getReadOnlyWallet();
-                Trade trade = Web3Helpers.getTradeById(readOnlyWallet.getFirst(), readOnlyWallet.getSecond(), tradeId);
+                Trade trade = web3Helpers.getTradeById(readOnlyWallet.getFirst(), readOnlyWallet.getSecond(), tradeId);
 
                 MarketTradeDTO tradeDTO = new MarketTradeDTO();
                 tradeDTO.setTradeId(tradeId);
@@ -135,7 +136,7 @@ public class MarketService {
      */
     public List<Long> checkAndGetOpenedTrades(final List<Long> tradesIds) {
         final List<Long> allTradesIds = allTrades.keySet().stream().map(BigInteger::longValue).collect(Collectors.toList());
-        for (Long tradeId: tradesIds) {
+        for (Long tradeId : tradesIds) {
             if (!(allTradesIds.contains(tradeId)))
                 throw new NoSuchOpenedTradeException(tradeId);
         }
@@ -150,7 +151,7 @@ public class MarketService {
      */
     public List<MarketTradeDTO> getTradesByTradeIds(final List<Long> tradesIds) {
         List<MarketTradeDTO> marketTradeDTOs = new ArrayList<>();
-        for (Long tradeId: tradesIds) {
+        for (Long tradeId : tradesIds) {
             marketTradeDTOs.add(allTrades.get(BigInteger.valueOf(tradeId)));
         }
         return marketTradeDTOs;
@@ -179,9 +180,9 @@ public class MarketService {
         if (fromWallet == null) throw new NoSuchNFTException(nftId);
 
         // open the trade in blockchain
-        Either<BigInteger, String> tradeIdEither = Web3Helpers.openTrade(
+        Either<BigInteger, String> tradeIdEither = web3Helpers.openTrade(
                 fromWallet.getSecretValue(),
-                Web3Helpers.getSecretForWallet(fromWallet.getSecretKey(), fromWallet.getSecretSalt()),
+                web3Helpers.getSecretForWallet(fromWallet.getSecretKey(), fromWallet.getSecretSalt()),
                 nftId,
                 price);
         if (tradeIdEither.getRight().isPresent())
@@ -212,13 +213,13 @@ public class MarketService {
         if (!trade.isOpen()) throw new TradeNotOpenException(tradeId);
 
         Wallet fromWallet = getWallet(userId, walletId);
-        BigInteger walletBalance = Web3Helpers.getWalletBalance(fromWallet.getAddress());
+        BigInteger walletBalance = web3Helpers.getWalletBalance(fromWallet.getAddress());
         if (walletBalance.compareTo(trade.getWeiPrice()) < 0)
             throw new InsufficientBalanceException(walletBalance, trade.getWeiPrice());
 
-        Either<Boolean, String> result = Web3Helpers.executeTrade(
+        Either<Boolean, String> result = web3Helpers.executeTrade(
                 fromWallet.getSecretValue(),
-                Web3Helpers.getSecretForWallet(fromWallet.getSecretKey(), fromWallet.getSecretSalt()),
+                web3Helpers.getSecretForWallet(fromWallet.getSecretKey(), fromWallet.getSecretSalt()),
                 tradeId,
                 trade.getWeiPrice());
         if (result.getRight().isPresent())
@@ -244,9 +245,9 @@ public class MarketService {
         if (fromWallet == null)
             throw new Exception("No wallet with trade's wallet address in user wallets; maybe, it was deleted");
 
-        Either<Boolean, String> result = Web3Helpers.cancelTrade(
+        Either<Boolean, String> result = web3Helpers.cancelTrade(
                 fromWallet.getSecretValue(),
-                Web3Helpers.getSecretForWallet(fromWallet.getSecretKey(), fromWallet.getSecretSalt()),
+                web3Helpers.getSecretForWallet(fromWallet.getSecretKey(), fromWallet.getSecretSalt()),
                 tradeId);
         if (result.getRight().isPresent())
             throw new Exception("Could not cancel trade: " + result.getRight().get());

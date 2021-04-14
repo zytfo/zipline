@@ -4,7 +4,10 @@ import com.zipline.Zipline;
 import io.reactivex.Flowable;
 import org.bouncycastle.crypto.generators.BCrypt;
 import org.bouncycastle.util.encoders.Hex;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.data.util.Pair;
+import org.springframework.stereotype.Component;
 import org.web3j.crypto.CipherException;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.ECKeyPair;
@@ -35,17 +38,36 @@ import java.util.List;
 /**
  * Helper utils to communicate with Web3j API
  */
+@Component
 public class Web3Helpers {
-    private static final String ROPSTEN_NODE_ADDRESS = "https://ropsten.infura.io/v3/dfa2b7d4df384d47970010b94c8a9519";
-    private static final String BINANCE_TEST_NODE_ADDRESS = "https://data-seed-prebsc-1-s1.binance.org:8545";
-    private static final String CONTRACT_ADDRESS = "0xF4Ce23586D037cFE538c724FC1B08a130Fbc2571";
-    private static final byte CHAIN_ID = 97; // Binance test chain ID; mainnet is 56, https://docs.binance.org/smart-chain/wallet/metamask.html
+    @Autowired
+    public Web3Helpers(Environment env) {
+        String[] activeProfiles = env.getActiveProfiles();
+        if (activeProfiles.length == 1 && activeProfiles[0].equals("production")) {
+            // it's a production environment, use mainnet settings
+            BINANCE_NODE_ADDRESS = "https://bsc-dataseed1.defibit.io";
+            CONTRACT_ADDRESS = "";
+            CHAIN_ID = 56;
+            GAS_PROVIDER = new StaticGasProvider(
+                    Convert.toWei("5", Convert.Unit.GWEI).toBigInteger(), BigInteger.valueOf(500000));
+        } else {
+            // otherwise, use testnet settings
+            BINANCE_NODE_ADDRESS = "https://data-seed-prebsc-1-s1.binance.org:8545";
+            CONTRACT_ADDRESS = "0xF4Ce23586D037cFE538c724FC1B08a130Fbc2571";
+            CHAIN_ID = 97;
+            GAS_PROVIDER = new StaticGasProvider(
+                    Convert.toWei("20", Convert.Unit.GWEI).toBigInteger(), BigInteger.valueOf(500000));
+        }
+        web3 = Web3j.build(new HttpService(BINANCE_NODE_ADDRESS));
+    }
 
-    private static final File TEMP_WALLET_DIRECTORY = new File("/tmp/");
+    private final static File TEMP_WALLET_DIRECTORY = new File("/tmp/");
 
-    private static final Web3j web3 = Web3j.build(new HttpService(BINANCE_TEST_NODE_ADDRESS));
-    // TODO: this must be calculated dynamically
-    private static final ContractGasProvider gasProvider = new StaticGasProvider(Convert.toWei("20", Convert.Unit.GWEI).toBigInteger(), BigInteger.valueOf(500000));
+    private final String BINANCE_NODE_ADDRESS;
+    private final String CONTRACT_ADDRESS;
+    private final long CHAIN_ID;
+    private final ContractGasProvider GAS_PROVIDER;
+    private final Web3j web3;
 
     /**
      * Get a smart contract wrapper
@@ -53,8 +75,8 @@ public class Web3Helpers {
      * @param credentials to access the contract
      * @return the contract
      */
-    public static Zipline getContract(Credentials credentials) {
-        return Zipline.load(CONTRACT_ADDRESS, web3, new RawTransactionManager(web3, credentials, CHAIN_ID), gasProvider);
+    public Zipline getContract(Credentials credentials) {
+        return Zipline.load(CONTRACT_ADDRESS, web3, new RawTransactionManager(web3, credentials, CHAIN_ID), GAS_PROVIDER);
     }
 
     /**
@@ -62,7 +84,7 @@ public class Web3Helpers {
      *
      * @return the observable
      */
-    public static Flowable<Zipline.TradeStatusChangeEventResponse> getTradesObservable() {
+    public Flowable<Zipline.TradeStatusChangeEventResponse> getTradesObservable() {
         Zipline contract = getContract(Credentials.create(new ECKeyPair(BigInteger.ZERO, BigInteger.ZERO)));
         return contract.tradeStatusChangeEventFlowable(DefaultBlockParameterName.EARLIEST, DefaultBlockParameterName.LATEST);
     }
@@ -72,7 +94,7 @@ public class Web3Helpers {
      *
      * @return the observable
      */
-    public static Flowable<Zipline.TransferEventResponse> getNFTTransferObservable() {
+    public Flowable<Zipline.TransferEventResponse> getNFTTransferObservable() {
         Zipline contract = getContract(Credentials.create(new ECKeyPair(BigInteger.ZERO, BigInteger.ZERO)));
         return contract.transferEventFlowable(DefaultBlockParameterName.EARLIEST, DefaultBlockParameterName.LATEST);
     }
@@ -113,7 +135,7 @@ public class Web3Helpers {
      * @param walletAddress to get balance of
      * @return number of Wei on this wallet
      */
-    public static BigInteger getWalletBalance(final String walletAddress) throws IOException {
+    public BigInteger getWalletBalance(final String walletAddress) throws IOException {
         return web3.ethGetBalance("0x" + walletAddress, DefaultBlockParameterName.LATEST).send().getBalance();
     }
 
@@ -125,7 +147,7 @@ public class Web3Helpers {
      * @param walletAddress address of the wallet
      * @return amount of money which is pending
      */
-    public static BigInteger getWalletPendingWithdrawals(
+    public BigInteger getWalletPendingWithdrawals(
             final String wallet, final String password, final String walletAddress) throws Exception {
         File walletFile = null;
         try {
@@ -147,7 +169,7 @@ public class Web3Helpers {
      * @param password to the wallet
      * @throws Exception in case of failure
      */
-    public static void withdrawWallet(final String wallet, final String password) throws Exception {
+    public void withdrawWallet(final String wallet, final String password) throws Exception {
         File walletFile = null;
         try {
             walletFile = getWalletFile(wallet);
@@ -168,7 +190,7 @@ public class Web3Helpers {
      * @param walletPassword to the wallet
      * @return private key of the wallet
      */
-    public static String getWalletPK(final String walletPassword, final String wallet) throws IOException, CipherException {
+    public String getWalletPK(final String walletPassword, final String wallet) throws IOException, CipherException {
         File walletFile = null;
         try {
             walletFile = File.createTempFile("wal", null, TEMP_WALLET_DIRECTORY);
@@ -203,7 +225,7 @@ public class Web3Helpers {
      * @param nftId    of the NFT
      * @return JSON of token's URI
      */
-    public static String getNftById(final String wallet, final String password, final BigInteger nftId) throws Exception {
+    public String getNftById(final String wallet, final String password, final BigInteger nftId) throws Exception {
         File walletFile = null;
         try {
             walletFile = getWalletFile(wallet);
@@ -225,7 +247,7 @@ public class Web3Helpers {
      * @param ownerAddress address (without 0x in the beginning) to NFTs of
      * @return list of pairs of <ID, JSON_URI>
      */
-    public static List<Pair<BigInteger, String>> getNftsByOwner(final String wallet, final String password, final String ownerAddress) throws Exception {
+    public List<Pair<BigInteger, String>> getNftsByOwner(final String wallet, final String password, final String ownerAddress) throws Exception {
         File walletFile = null;
         try {
             List<Pair<BigInteger, String>> result = new LinkedList<>();
@@ -254,7 +276,7 @@ public class Web3Helpers {
      * @param tokenURI to put into the new token
      * @return ID of the token in case of success, stringified error otherwise
      */
-    public static Either<BigInteger, String> createNFT(final String wallet, final String password, final String tokenURI) {
+    public Either<BigInteger, String> createNFT(final String wallet, final String password, final String tokenURI) {
         File walletFile = null;
         try {
             walletFile = getWalletFile(wallet);
@@ -280,7 +302,7 @@ public class Web3Helpers {
      * @param tradeId  to get
      * @return the trade
      */
-    public static Trade getTradeById(final String wallet, final String password, BigInteger tradeId) throws Exception {
+    public Trade getTradeById(final String wallet, final String password, BigInteger tradeId) throws Exception {
         File walletFile = null;
         try {
             walletFile = getWalletFile(wallet);
@@ -304,7 +326,7 @@ public class Web3Helpers {
      * @param price    for the NFT
      * @return trade ID in case of success, error otherwise
      */
-    public static Either<BigInteger, String> openTrade(final String wallet, final String password, final BigInteger nftId, final BigInteger price) {
+    public Either<BigInteger, String> openTrade(final String wallet, final String password, final BigInteger nftId, final BigInteger price) {
         File walletFile = null;
         try {
             walletFile = getWalletFile(wallet);
@@ -331,7 +353,7 @@ public class Web3Helpers {
      * @param weiAmount to transfer for this trade
      * @return true in case of success, error otherwise
      */
-    public static Either<Boolean, String> executeTrade(final String wallet, final String password, final BigInteger tradeId, final BigInteger weiAmount) {
+    public Either<Boolean, String> executeTrade(final String wallet, final String password, final BigInteger tradeId, final BigInteger weiAmount) {
         File walletFile = null;
         try {
             walletFile = getWalletFile(wallet);
@@ -359,7 +381,7 @@ public class Web3Helpers {
      * @param tradeId  to cancel
      * @return true in case of success, error otherwise
      */
-    public static Either<Boolean, String> cancelTrade(final String wallet, final String password, final BigInteger tradeId) {
+    public Either<Boolean, String> cancelTrade(final String wallet, final String password, final BigInteger tradeId) {
         File walletFile = null;
         try {
             walletFile = getWalletFile(wallet);
@@ -379,7 +401,7 @@ public class Web3Helpers {
         }
     }
 
-    private static File getWalletFile(final String wallet) throws IOException {
+    private File getWalletFile(final String wallet) throws IOException {
         File walletFile = null;
         try {
             walletFile = File.createTempFile("wal", null, TEMP_WALLET_DIRECTORY);
