@@ -4,6 +4,7 @@ import com.zipline.Zipline;
 import io.reactivex.Flowable;
 import org.bouncycastle.crypto.generators.BCrypt;
 import org.bouncycastle.util.encoders.Hex;
+import org.springframework.data.util.Pair;
 import org.web3j.crypto.CipherException;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.ECKeyPair;
@@ -28,6 +29,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -63,6 +65,16 @@ public class Web3Helpers {
     public static Flowable<Zipline.TradeStatusChangeEventResponse> getTradesObservable() {
         Zipline contract = getContract(Credentials.create(new ECKeyPair(BigInteger.ZERO, BigInteger.ZERO)));
         return contract.tradeStatusChangeEventFlowable(DefaultBlockParameterName.EARLIEST, DefaultBlockParameterName.LATEST);
+    }
+
+    /**
+     * Get an observable for NFT transfer event
+     *
+     * @return the observable
+     */
+    public static Flowable<Zipline.TransferEventResponse> getNFTTransferObservable() {
+        Zipline contract = getContract(Credentials.create(new ECKeyPair(BigInteger.ZERO, BigInteger.ZERO)));
+        return contract.transferEventFlowable(DefaultBlockParameterName.EARLIEST, DefaultBlockParameterName.LATEST);
     }
 
     /*
@@ -137,6 +149,57 @@ public class Web3Helpers {
      */
     public static String getSecretForWallet(String rawSecret, String salt) {
         return Arrays.toString(BCrypt.generate(rawSecret.getBytes(), salt.getBytes(), 10));
+    }
+
+    /**
+     * Get NFT token's URI JSON
+     *
+     * @param wallet   the wallet
+     * @param password to the wallet
+     * @param nftId    of the NFT
+     * @return JSON of token's URI
+     */
+    public static String getNftById(final String wallet, final String password, final BigInteger nftId) throws Exception {
+        File walletFile = null;
+        try {
+            walletFile = getWalletFile(wallet);
+            Credentials credentials = WalletUtils.loadCredentials(password, walletFile);
+            Zipline contract = getContract(credentials);
+
+            return contract.tokenURI(nftId).send();
+        } catch (Exception e) {
+            if (walletFile != null) walletFile.deleteOnExit();
+            throw e;
+        }
+    }
+
+    /**
+     * Get all NFTs belonging to the owner
+     *
+     * @param wallet       the wallet
+     * @param password     to the wallet
+     * @param ownerAddress address (without 0x in the beginning) to NFTs of
+     * @return list of pairs of <ID, JSON_URI>
+     */
+    public static List<Pair<BigInteger, String>> getNftsByOwner(final String wallet, final String password, final String ownerAddress) throws Exception {
+        File walletFile = null;
+        try {
+            List<Pair<BigInteger, String>> result = new LinkedList<>();
+
+            walletFile = getWalletFile(wallet);
+            Credentials credentials = WalletUtils.loadCredentials(password, walletFile);
+            Zipline contract = getContract(credentials);
+
+            BigInteger ownerBalance = contract.balanceOf("0x" + ownerAddress).send();
+            for (BigInteger i = BigInteger.ZERO; i.compareTo(ownerBalance) < 0; i = i.add(BigInteger.ONE)) {
+                BigInteger currentId = contract.tokenOfOwnerByIndex(ownerAddress, i).send();
+                result.add(Pair.of(currentId, contract.tokenURI(currentId).send()));
+            }
+            return result;
+        } catch (Exception e) {
+            if (walletFile != null) walletFile.deleteOnExit();
+            throw e;
+        }
     }
 
     /**

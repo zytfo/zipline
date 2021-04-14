@@ -2,14 +2,15 @@ package com.zipline.controller;
 
 import com.zipline.auth.security.services.UserDetailsImpl;
 import com.zipline.auth.security.services.UserDetailsServiceImpl;
+import com.zipline.dto.NFTDTO;
 import com.zipline.dto.WalletDTO;
 import com.zipline.dto.WalletImportExportDTO;
 import com.zipline.exception.ErrorResponse;
 import com.zipline.model.NFT;
 import com.zipline.model.Wallet;
+import com.zipline.service.NFTService;
 import com.zipline.service.UtilService;
 import com.zipline.service.WalletService;
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiParam;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -34,6 +35,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * The type Wallet controller
@@ -48,6 +50,7 @@ public class WalletController {
     private final UserDetailsServiceImpl userDetailsService;
     private final UtilService utilService;
     private final WalletService walletService;
+    private final NFTService nftService;
 
     /**
      * Instantiates a new Wallet controller.
@@ -56,16 +59,18 @@ public class WalletController {
      * @param userDetailsService the user details service
      * @param utilService        the util service
      * @param walletService      the Wallet service
+     * @param nftService         the NFT service
      */
     @Autowired
     public WalletController(final ModelMapper modelMapper,
                             final UserDetailsServiceImpl userDetailsService,
                             final UtilService utilService,
-                            final WalletService walletService) {
+                            final WalletService walletService, NFTService nftService) {
         this.modelMapper = modelMapper;
         this.userDetailsService = userDetailsService;
         this.utilService = utilService;
         this.walletService = walletService;
+        this.nftService = nftService;
     }
 
     @Operation(summary = "Get Wallets", description = "Get all wallets of the user", tags = {"wallet-controller"})
@@ -81,11 +86,10 @@ public class WalletController {
         final List<Wallet> wallets = walletService.getWalletsOfUser(userDetails.getId());
         for (Wallet wallet : wallets) {
             WalletDTO walletDTO = modelMapper.map(wallet, WalletDTO.class);
-            Set<BigInteger> nfts = new HashSet<>();
-            for (NFT nft : wallet.getNfts()) {
-                nfts.add(nft.getNftId());
-            }
-            walletDTO.setNftIds(nfts);
+            walletDTO.setNftIds(nftService
+                    .getNftsByWalletId(wallet.getWalletId()).stream()
+                    .map(NFTDTO::getNftId)
+                    .collect(Collectors.toSet()));
             walletDTOS.add(walletDTO);
         }
         return new ResponseEntity<>(utilService.getResponseBody(walletDTOS), HttpStatus.OK);
@@ -130,7 +134,12 @@ public class WalletController {
         logger.debug("REST request to import a Wallet");
         Wallet importedWallet = walletService.importWallet(
                 userDetailsService.getUser().getId(), wallet.getWalletName(), wallet.getPrivateKey());
-        return new ResponseEntity<>(utilService.getResponseBody(modelMapper.map(importedWallet, WalletDTO.class)), HttpStatus.OK);
+        WalletDTO walletDTO = modelMapper.map(importedWallet, WalletDTO.class);
+        walletDTO.setNftIds(nftService
+                .getNftsByWalletId(walletDTO.getWalletId()).stream()
+                .map(NFTDTO::getNftId)
+                .collect(Collectors.toSet()));
+        return new ResponseEntity<>(utilService.getResponseBody(walletDTO), HttpStatus.OK);
     }
 
     @Operation(summary = "Export Wallet", description = "Export a Wallet by ID", tags = {"wallet-controller"})

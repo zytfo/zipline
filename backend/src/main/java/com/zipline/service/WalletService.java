@@ -1,8 +1,10 @@
 package com.zipline.service;
 
 import com.zipline.exception.NoSuchWalletException;
+import com.zipline.model.NFT;
 import com.zipline.model.User;
 import com.zipline.model.Wallet;
+import com.zipline.repository.NFTRepository;
 import com.zipline.repository.UserRepository;
 import com.zipline.repository.WalletRepository;
 import com.zipline.smartcontract.Web3Helpers;
@@ -24,9 +26,8 @@ import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -35,14 +36,17 @@ public class WalletService {
 
     UserRepository userRepository;
     WalletRepository walletRepository;
+    NFTService nftService;
+
 
     /**
      * Instantiates a new Wallet service.
      */
     @Autowired
-    public WalletService(final UserRepository userRepository, final WalletRepository walletRepository) {
+    public WalletService(final UserRepository userRepository, final WalletRepository walletRepository, final NFTService nftService) {
         this.userRepository = userRepository;
         this.walletRepository = walletRepository;
+        this.nftService = nftService;
     }
 
     /**
@@ -102,7 +106,9 @@ public class WalletService {
      * @return the imported Wallet
      */
     public Wallet importWallet(final Long userId, final String walletName, final String privateKey) throws Exception {
-        return createWallet(userId, walletName, privateKey);
+        Wallet importedWallet = createWallet(userId, walletName, privateKey);
+        nftService.updateNftToWalletIdMapping(importedWallet.getWalletId(), importedWallet.getAddress());
+        return importedWallet;
     }
 
     /**

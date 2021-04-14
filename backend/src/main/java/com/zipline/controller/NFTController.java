@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -68,15 +69,23 @@ public class NFTController {
     @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN') or hasRole('USER')")
     public ResponseEntity<?> getNFTs() {
         logger.debug("REST request to get all NFTs of the user");
-        final List<NFTDTO> nftDTOs = new ArrayList<>();
-        final UserDetailsImpl userDetails = userDetailsService.getUser();
-        final List<NFT> nfts = nftService.getNFTsOfUser(userDetails.getId());
-        for (NFT nft : nfts) {
-            NFTDTO nftdto = modelMapper.map(nft, NFTDTO.class);
-            nftdto.setWalletId(nft.getWallet().getWalletId());
-            nftDTOs.add(nftdto);
-        }
-        return new ResponseEntity<>(utilService.getResponseBody(nftDTOs), HttpStatus.OK);
+        return new ResponseEntity<>(utilService.getResponseBody(
+                nftService.getNFTsOfUser(userDetailsService.getUser().getId())), HttpStatus.OK);
+    }
+
+    /**
+     * Gets NFT by ID.
+     *
+     * @return the NFT
+     */
+    @Operation(summary = "Get NFT by ID", description = "Get NFT by ID", tags = {"nft-controller"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful operation",
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = NFT.class))))})
+    @GetMapping("/{nftId}")
+    @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN') or hasRole('USER')")
+    public ResponseEntity<?> getNFTById(final @ApiParam(value = "Id of the NFT to retrieve") @PathVariable(value = "nftId") BigInteger nftId) {
+        return new ResponseEntity<>(utilService.getResponseBody(nftService.getNftById(nftId, true)), HttpStatus.OK);
     }
 
     /**
@@ -96,7 +105,7 @@ public class NFTController {
     public ResponseEntity<?> createNFT(
             final @ApiParam(value = "NFT parameters") @RequestBody NFTDTO nft) throws Exception {
         logger.debug("REST request to create a new NFT");
-        final NFT createdNft = nftService.create(modelMapper.map(nft, NFT.class), userDetailsService.getUser().getId(), nft.getWalletId());
-        return new ResponseEntity<>(utilService.getResponseBody(modelMapper.map(createdNft, NFTDTO.class)), HttpStatus.CREATED);
+        final NFTDTO createdNft = nftService.create(nft, userDetailsService.getUser().getId(), nft.getWalletId());
+        return new ResponseEntity<>(utilService.getResponseBody(createdNft), HttpStatus.CREATED);
     }
 }

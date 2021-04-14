@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.math.BigInteger;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -48,9 +49,6 @@ public class Wallet {
             joinColumns = @JoinColumn(name = "wallet_id"),
             inverseJoinColumns = @JoinColumn(name = "user_id"))
     private User owner;
-
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "wallet")
-    private Set<NFT> nfts = new HashSet<>();
 
     public Wallet(String name, String address, String secretKey, String secretSalt, String secretValue, User owner) {
         this.name = name;
