@@ -169,4 +169,28 @@ public class WalletController {
         BigInteger balance = walletService.getWalletBalance(userDetailsService.getUser().getId(), walletId);
         return new ResponseEntity<>(utilService.getResponseBody(balance), HttpStatus.OK);
     }
+
+    @Operation(summary = "Get Wallet Withdrawals", description = "Get pending withdrawals of the wallet", tags = {"wallet-controller"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful operation",
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = BigInteger.class))))})
+    @GetMapping("/{walletId}/withdrawals")
+    @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN') or hasRole('USER')")
+    public ResponseEntity<?> getWalletWithdrawals(@PathVariable Long walletId) throws Exception {
+        logger.debug("REST request to get pending withdrawals of the Wallet of the user");
+        BigInteger withdrawals = walletService.getWalletPendingWithdrawals(userDetailsService.getUser().getId(), walletId);
+        return new ResponseEntity<>(utilService.getResponseBody(withdrawals), HttpStatus.OK);
+    }
+
+    @Operation(summary = "Withdraw", description = "Withdraw the pending withdrawals", tags = {"wallet-controller"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful operation",
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = BigInteger.class))))})
+    @PostMapping("/{walletId}/withdrawals")
+    @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN') or hasRole('USER')")
+    public ResponseEntity<?> withdraw(@PathVariable Long walletId) throws Exception {
+        logger.debug("REST request to get pending withdrawals of the Wallet of the user");
+        walletService.withdrawWallet(userDetailsService.getUser().getId(), walletId);
+        return new ResponseEntity<>(utilService.getEmptyResponseBody(), HttpStatus.OK);
+    }
 }

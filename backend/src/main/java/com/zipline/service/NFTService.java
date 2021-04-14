@@ -109,6 +109,12 @@ public class NFTService implements Consumer<Zipline.TransferEventResponse> {
         return nft;
     }
 
+    /**
+     * Get NFTs which belong to the wallet
+     *
+     * @param walletId to get NFTs for
+     * @return collection of NFTs
+     */
     public Set<NFTDTO> getNftsByWalletId(final Long walletId) {
         Set<NFTDTO> result = new HashSet<>();
         for (NFTDTO nft : nfts.values()) {
@@ -117,6 +123,12 @@ public class NFTService implements Consumer<Zipline.TransferEventResponse> {
         return result;
     }
 
+    /**
+     * Memorize that this wallet address has now this wallet ID
+     *
+     * @param walletId      to memorize
+     * @param walletAddress of the wallet
+     */
     public void updateNftToWalletIdMapping(final Long walletId, final String walletAddress) {
         for (NFTDTO nft : nfts.values()) {
             if (nft.getWalletAddress().equals(walletAddress)) nft.setWalletId(walletId);

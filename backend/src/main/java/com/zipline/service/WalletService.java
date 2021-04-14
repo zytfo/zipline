@@ -138,6 +138,35 @@ public class WalletService {
         return Web3Helpers.getWalletBalance(wallet.getAddress());
     }
 
+    /**
+     * Get pending withdrawals of the wallet
+     *
+     * @param userId   the wallet's owner
+     * @param walletId of the wallet
+     * @return pending withdrawals of the requested wallet
+     */
+    public BigInteger getWalletPendingWithdrawals(final Long userId, final Long walletId) throws Exception {
+        Wallet wallet = getWallet(userId, walletId);
+        return Web3Helpers.getWalletPendingWithdrawals(
+                wallet.getSecretValue(),
+                Web3Helpers.getSecretForWallet(wallet.getSecretKey(), wallet.getSecretSalt()),
+                wallet.getAddress());
+    }
+
+    /**
+     * Withdraw money, which are pending for this wallet
+     *
+     * @param userId   the wallet's owner
+     * @param walletId of the wallet
+     * @throws Exception in case of failure
+     */
+    public void withdrawWallet(final Long userId, final Long walletId) throws Exception {
+        Wallet wallet = getWallet(userId, walletId);
+        Web3Helpers.withdrawWallet(
+                wallet.getSecretValue(),
+                Web3Helpers.getSecretForWallet(wallet.getSecretKey(), wallet.getSecretSalt()));
+    }
+
     private User getUser(final Long userId) throws NotFoundException {
         Optional<User> userOptional = userRepository.findById(userId);
         if (!userOptional.isPresent()) throw new NotFoundException("No user with ID " + userId + " found");

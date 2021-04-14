@@ -118,6 +118,50 @@ public class Web3Helpers {
     }
 
     /**
+     * Get withdrawals, which are pending for this wallet
+     *
+     * @param wallet        the wallet
+     * @param password      to the wallet
+     * @param walletAddress address of the wallet
+     * @return amount of money which is pending
+     */
+    public static BigInteger getWalletPendingWithdrawals(
+            final String wallet, final String password, final String walletAddress) throws Exception {
+        File walletFile = null;
+        try {
+            walletFile = getWalletFile(wallet);
+            Credentials credentials = WalletUtils.loadCredentials(password, walletFile);
+            Zipline contract = getContract(credentials);
+
+            return contract._pendingWithdrawals(walletAddress).send();
+        } catch (Exception e) {
+            if (walletFile != null) walletFile.deleteOnExit();
+            throw e;
+        }
+    }
+
+    /**
+     * Withdraw money which are pending for this wallet
+     *
+     * @param wallet   the wallet
+     * @param password to the wallet
+     * @throws Exception in case of failure
+     */
+    public static void withdrawWallet(final String wallet, final String password) throws Exception {
+        File walletFile = null;
+        try {
+            walletFile = getWalletFile(wallet);
+            Credentials credentials = WalletUtils.loadCredentials(password, walletFile);
+            Zipline contract = getContract(credentials);
+
+            contract.withdraw().send();
+        } catch (Exception e) {
+            if (walletFile != null) walletFile.deleteOnExit();
+            throw e;
+        }
+    }
+
+    /**
      * Get a private key of the wallet
      *
      * @param wallet         to get private key of
