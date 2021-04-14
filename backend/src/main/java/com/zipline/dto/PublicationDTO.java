@@ -7,6 +7,7 @@ import lombok.Setter;
 
 import javax.validation.constraints.NotEmpty;
 import java.io.Serializable;
+import java.math.BigInteger;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -40,6 +41,11 @@ public class PublicationDTO implements Serializable {
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Integer numberOfComments;
+
+    private List<Long> tradeIds;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private List<MarketTradeDTO> marketTradeDTOs;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDateTime created;

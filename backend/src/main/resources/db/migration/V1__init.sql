@@ -80,6 +80,7 @@ CREATE TABLE publications
     created_by BIGINT,
     content    TEXT,
     tickers    VARCHAR(5000)[],
+    trades     BIGINT[],
     created    TIMESTAMP,
     updated    TIMESTAMP
 );
