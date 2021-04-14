@@ -1,6 +1,7 @@
 package com.zipline.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.zipline.model.NFT;
 import groovy.transform.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,6 +30,9 @@ public class MarketTradeDTO implements Serializable {
 
     @NotEmpty(message = "NFT ID must not be empty")
     private BigInteger nftId;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private NFTDTO nft;
 
     @NotEmpty(message = "Price must not be empty")
     private BigInteger weiPrice;

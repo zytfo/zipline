@@ -2,6 +2,7 @@ package com.zipline.service;
 
 import com.zipline.Zipline;
 import com.zipline.dto.MarketTradeDTO;
+import com.zipline.dto.NFTDTO;
 import com.zipline.exception.*;
 import com.zipline.model.NFT;
 import com.zipline.model.User;
@@ -34,9 +35,9 @@ public class MarketService {
     private final UserRepository userRepository;
     private final WalletRepository walletRepository;
     private final NFTRepository nftRepository;
+    private final NFTService nftService;
     private final HashMap<BigInteger, MarketTradeDTO> allTrades;
     private final HashMap<BigInteger, MarketTradeDTO> openTrades;
-
 
     /**
      * Instantiates a new Market service.
@@ -46,10 +47,11 @@ public class MarketService {
      * @param nftRepository    the nft repository
      */
     @Autowired
-    public MarketService(final UserRepository userRepository, final WalletRepository walletRepository, final NFTRepository nftRepository) {
+    public MarketService(final UserRepository userRepository, final WalletRepository walletRepository, final NFTRepository nftRepository, final NFTService nftService) {
         this.userRepository = userRepository;
         this.walletRepository = walletRepository;
         this.nftRepository = nftRepository;
+        this.nftService = nftService;
         this.allTrades = new HashMap<>();
         this.openTrades = new HashMap<>();
 
@@ -77,6 +79,7 @@ public class MarketService {
                 tradeDTO.setTradeId(tradeId);
                 tradeDTO.setCreatorWalletAddress(trade.creatorAddress.substring(2)); // cut 0x from the address to be consistent
                 tradeDTO.setNftId(trade.nftId);
+                tradeDTO.setNft(nftService.getNftById(trade.nftId, false));
                 tradeDTO.setWeiPrice(trade.price);
                 tradeDTO.setOpen(trade.isOpen);
 
@@ -119,7 +122,9 @@ public class MarketService {
      * @return list of user's trades
      */
     public List<MarketTradeDTO> getAllTradesOfUser(final Long userId) {
-        return allTrades.values().stream().filter((MarketTradeDTO trade) -> Objects.nonNull(trade.getCreatorUserId()) && trade.getCreatorUserId().equals(userId)).collect(Collectors.toList());
+        return allTrades.values().stream()
+                .filter((MarketTradeDTO trade) -> trade.getCreatorUserId() != null && trade.getCreatorUserId().equals(userId))
+                .collect(Collectors.toList());
     }
 
     /**
@@ -164,8 +169,10 @@ public class MarketService {
         // find the NFT, which the user wants to sell, in their wallets
         Wallet fromWallet = null;
         for (Wallet wallet : walletRepository.findAllByOwnerId(userId)) {
-            Optional<NFT> nftOptional =
-                    wallet.getNfts().stream().filter((NFT nft_) -> nft_.getNftId().equals(nftId)).findFirst();
+            Optional<NFTDTO> nftOptional = nftService
+                    .getNftsByWalletId(wallet.getWalletId()).stream()
+                    .filter((NFTDTO nft_) -> nft_.getNftId().equals(nftId))
+                    .findFirst();
             if (!nftOptional.isPresent()) continue;
             fromWallet = wallet;
         }
