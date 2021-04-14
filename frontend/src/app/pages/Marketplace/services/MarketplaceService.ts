@@ -1,18 +1,33 @@
 import { backendService } from "../../../core/services/BackendService";
 
 class MarketplaceService {
-  getOpenPositions() {
-    return backendService.get(backendService.API + `market/trades/all_open`, {});
+  magicNumber = 1000000000000000000;
+
+  getOpenPositions(destination: string) {
+    return backendService.get(backendService.API + `market/trades/${destination}`, {});
   }
 
-  newWallet(content: string) {
-    const params = {
-      walletName: content,
-    };
+  newOrder(nftId: number, price: number) {
+    const newPrice = price * this.magicNumber;
     return backendService.post(
-      backendService.API + `market/trades/all_open`,
-      {} ,
-      { params }
+      backendService.API + `market/trades/open/${nftId}/${newPrice.toFixed()}`,
+      {},
+      { }
+    );
+  }
+
+  executeTrade(tradeId: number, walletId: number) {
+    return backendService.post(
+      backendService.API + `market/trades/${tradeId}/execute/${walletId}`,
+      {},
+      { }
+    );
+  }
+
+  deleteTrade(tradeId: number) {
+    return backendService.delete(
+      backendService.API + `market/trades/${tradeId}/cancel`,
+      {}
     );
   }
 }

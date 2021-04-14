@@ -38,6 +38,18 @@ class WalletService {
       {}
     );
   }
+
+  getBalance(walletId: number) {
+    return backendService.get(backendService.API + `wallets/${walletId}/balance`, {});
+  }
+
+  getWithdrawals(walletId: number) {
+    return backendService.get(backendService.API + `wallets/${walletId}/withdrawals`, {});
+  }
+
+  withdrawWallet(walletId: number) {
+    return backendService.post(backendService.API + `wallets/${walletId}/withdrawals`, {}, {});
+  }
 }
 
 export const walletService = new WalletService();

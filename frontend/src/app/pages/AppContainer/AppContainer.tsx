@@ -83,7 +83,7 @@ const LoggedRouter = (props) => {
         <Route path={"/nft"}>
           <NftPage />
         </Route>
-        <Route path={"/marketplace"}>
+        <Route path={"/marketplace/:subpage"}>
           <Marketplace />
         </Route>
         <Redirect from="*" to="/publications" />

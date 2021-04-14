@@ -36,6 +36,9 @@ const UserCard = (props) => {
     } else {
       setCurrentItem([props.location.pathname]);
     }
+    if (props.location.pathname.includes("marketplace")) {
+      setCurrentItem(["/marketplace/"]);
+    }
   }, [props.location.key]);
 
   const logOut = () => {
@@ -62,8 +65,8 @@ const UserCard = (props) => {
           <Menu.Item key="/publications" icon={<FireOutlined />}>
             <Link to={`/publications`}>Main</Link>
           </Menu.Item>
-          <Menu.Item key="/marketplace" icon={<ShopOutlined />}>
-            <Link to={`/marketplace`}>Marketplace</Link>
+          <Menu.Item key="/marketplace/" icon={<ShopOutlined />}>
+            <Link to={`/marketplace/all`}>Marketplace</Link>
           </Menu.Item>
           <Menu.Item key="/wallets" icon={<WalletOutlined />}>
             <Link to={`/wallets`}>Wallets</Link>
