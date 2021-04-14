@@ -1,6 +1,5 @@
 package com.zipline.controller;
 
-import com.zipline.auth.security.services.UserDetailsImpl;
 import com.zipline.auth.security.services.UserDetailsServiceImpl;
 import com.zipline.dto.NFTDTO;
 import com.zipline.exception.ErrorResponse;
@@ -16,16 +15,14 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * The type NFT controller.
@@ -76,6 +73,7 @@ public class NFTController {
     /**
      * Gets NFT by ID.
      *
+     * @param nftId the nft id
      * @return the NFT
      */
     @Operation(summary = "Get NFT by ID", description = "Get NFT by ID", tags = {"nft-controller"})
@@ -93,6 +91,7 @@ public class NFTController {
      *
      * @param nft the NFT
      * @return the response entity
+     * @throws Exception the exception
      */
     @Operation(summary = "Create NFT", description = "Create NFT for user on the specified wallet", tags = {"nft-controller"})
     @ApiResponses(value = {

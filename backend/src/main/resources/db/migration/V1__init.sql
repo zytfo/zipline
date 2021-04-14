@@ -136,3 +136,11 @@ CREATE TABLE complaints
     message     VARCHAR(2000) NOT NULL,
     created     TIMESTAMP     NOT NULL
 );
+
+CREATE TABLE files
+(
+    id   UUID CONSTRAINT files_pk PRIMARY KEY,
+    name VARCHAR(2000),
+    type VARCHAR(1000),
+    data BYTEA
+);

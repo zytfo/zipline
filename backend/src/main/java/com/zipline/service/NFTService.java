@@ -17,13 +17,21 @@ import org.springframework.boot.configurationprocessor.json.JSONObject;
 import org.springframework.data.domain.Example;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import springfox.documentation.common.Either;
 
 import javax.transaction.Transactional;
+import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * The type Nft service.
+ */
 @Service
 @Transactional
 public class NFTService implements Consumer<Zipline.TransferEventResponse> {
@@ -39,6 +47,7 @@ public class NFTService implements Consumer<Zipline.TransferEventResponse> {
     /**
      * Instantiates a new NFT service.
      *
+     * @param nftRepository_   the nft repository
      * @param userRepository   the user repository
      * @param walletRepository the wallet repository
      */
@@ -100,8 +109,9 @@ public class NFTService implements Consumer<Zipline.TransferEventResponse> {
     /**
      * Get NFT by its ID
      *
-     * @param nftId ID of the NFT
-     * @return NFT
+     * @param nftId           ID of the NFT
+     * @param throwIfNotFound the throw if not found
+     * @return NFT nft by id
      */
     public NFTDTO getNftById(final BigInteger nftId, boolean throwIfNotFound) {
         NFTDTO nft = nfts.get(nftId);
@@ -158,6 +168,7 @@ public class NFTService implements Consumer<Zipline.TransferEventResponse> {
      * @param userId   the user ID
      * @param walletId the wallet ID on which NFT will be created
      * @return the created NFT
+     * @throws Exception the exception
      */
     public NFTDTO create(NFTDTO nft, final Long userId, final Long walletId) throws Exception {
         Wallet wallet = userRepository.getOne(userId).getWallets().stream()
