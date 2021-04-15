@@ -166,11 +166,11 @@ public class PublicationController {
         publication.setCreated(LocalDateTime.now());
         publication.setCreatedBy(userDetails.getId());
         publication.setTradeIds(marketService.checkAndGetOpenedTrades(publicationDTO.getTradeIds()));
-        if (publicationDTO.getTradeIds() != null)
-            publicationDTO.setMarketTradeDTOs(marketService.getTradesByTradeIds(publicationDTO.getTradeIds()));
         publication = publicationService.save(publication);
         publicationDTO = modelMapper.map(publication, PublicationDTO.class);
         publicationDTO.setCreatedBy(userDetails.getUsername());
+        if (publicationDTO.getTradeIds() != null)
+            publicationDTO.setMarketTradeDTOs(marketService.getTradesByTradeIds(publicationDTO.getTradeIds()));
         return new ResponseEntity<>(utilService.getResponseBody(publicationDTO), HttpStatus.CREATED);
     }
 
