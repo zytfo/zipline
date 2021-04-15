@@ -3,7 +3,6 @@ package com.zipline.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.Setter;
 
 import javax.validation.constraints.NotEmpty;
@@ -34,7 +33,7 @@ public class NFTDTO implements Serializable {
     @NotEmpty(message = "Description must not be empty")
     private String description;
 
-    @NotEmpty(message = "Image URL must not be empty")
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String imageUrl;
 
     private String externalLink;

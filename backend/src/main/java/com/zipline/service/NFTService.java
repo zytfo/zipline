@@ -4,6 +4,7 @@ import com.zipline.Zipline;
 import com.zipline.dto.NFTDTO;
 import com.zipline.exception.NoSuchNFTException;
 import com.zipline.exception.NoSuchWalletException;
+import com.zipline.model.FileDB;
 import com.zipline.model.Wallet;
 import com.zipline.repository.NFTRepository;
 import com.zipline.repository.UserRepository;
@@ -18,16 +19,12 @@ import org.springframework.data.domain.Example;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import springfox.documentation.common.Either;
 
 import javax.transaction.Transactional;
-import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * The type Nft service.
@@ -43,18 +40,24 @@ public class NFTService implements Consumer<Zipline.TransferEventResponse> {
     private static final Logger logger = LoggerFactory.getLogger(LikeService.class);
     private final UserRepository userRepository;
     private final WalletRepository walletRepository;
+    private final FileStorageService fileStorageService;
 
     /**
      * Instantiates a new NFT service.
      *
-     * @param nftRepository_   the nft repository
-     * @param userRepository   the user repository
-     * @param walletRepository the wallet repository
+     * @param nftRepository_     the nft repository
+     * @param userRepository     the user repository
+     * @param walletRepository   the wallet repository
+     * @param fileStorageService the file storage service
      */
     @Autowired
-    public NFTService(final NFTRepository nftRepository_, UserRepository userRepository, WalletRepository walletRepository) {
+    public NFTService(final NFTRepository nftRepository_,
+                      final UserRepository userRepository,
+                      final WalletRepository walletRepository,
+                      final FileStorageService fileStorageService) {
         this.userRepository = userRepository;
         this.walletRepository = walletRepository;
+        this.fileStorageService = fileStorageService;
 
         // process the events of NFT ownership transferred
         Web3Helpers.getNFTTransferObservable().subscribe(this);
@@ -164,30 +167,40 @@ public class NFTService implements Consumer<Zipline.TransferEventResponse> {
     /**
      * Create a NFT
      *
-     * @param nft      the NFT
-     * @param userId   the user ID
-     * @param walletId the wallet ID on which NFT will be created
+     * @param nft    the NFT
+     * @param userId the user ID
+     * @param image  the image
      * @return the created NFT
      * @throws Exception the exception
      */
-    public NFTDTO create(NFTDTO nft, final Long userId, final Long walletId) throws Exception {
-        Wallet wallet = userRepository.getOne(userId).getWallets().stream()
-                .filter((Wallet w) -> w.getWalletId().equals(walletId)).findAny()
-                .orElseThrow(() -> new NoSuchWalletException(walletId));
+    public NFTDTO create(final NFTDTO nft, final Long userId, final MultipartFile image) throws Exception {
+        final Wallet wallet = userRepository.getOne(userId).getWallets().stream()
+                .filter((Wallet w) -> w.getWalletId().equals(nft.getWalletId())).findAny()
+                .orElseThrow(() -> new NoSuchWalletException(nft.getWalletId()));
+        final FileDB fileDB = fileStorageService.store(image);
+        final String fileDownloadUri = ServletUriComponentsBuilder
+                .fromCurrentContextPath()
+                .path("/api/files/")
+                .path(fileDB.getFileId().toString())
+                .toUriString();
 
-        // TODO: we need a special service here, which will save token's info and return us a persistent link, which
-        // TODO: we will put into blockchain; for now, store the token's JSON into blockchain
-        JSONObject tokenURI = new JSONObject();
+        final JSONObject tokenURI = new JSONObject();
         tokenURI.put("name", nft.getName());
         tokenURI.put("description", nft.getDescription());
         tokenURI.put("external_link", nft.getExternalLink());
-        tokenURI.put("image_url", nft.getImageUrl());
+        tokenURI.put("image_url", fileDownloadUri);
 
-        Either<BigInteger, String> nftId = Web3Helpers.createNFT(
+        final Either<BigInteger, String> nftId = Web3Helpers.createNFT(
                 wallet.getSecretValue(),
                 Web3Helpers.getSecretForWallet(wallet.getSecretKey(), wallet.getSecretSalt()),
                 tokenURI.toString());
-        nft.setNftId(nftId.getLeft().orElseThrow(() -> new Exception("Could not create NFT: " + nftId.getRight().get())));
+        if (nftId.getLeft().isPresent()) {
+            nft.setNftId(nftId.getLeft().get());
+            nft.setImageUrl(fileDownloadUri);
+        } else {
+            fileStorageService.deleteFile(fileDB.getFileId());
+            throw new Exception("Could not create NFT: " + nftId.getRight().get());
+        }
         return nft;
     }
 }

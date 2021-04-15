@@ -21,7 +21,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.validation.Valid;
 import java.math.BigInteger;
 
 /**
@@ -89,7 +91,11 @@ public class NFTController {
     /**
      * Create NFT entity.
      *
-     * @param nft the NFT
+     * @param image          the image
+     * @param walletId       the wallet id
+     * @param nftName        the nft name
+     * @param nftDescription the nft description
+     * @param externalLink   the external link
      * @return the response entity
      * @throws Exception the exception
      */
@@ -99,12 +105,21 @@ public class NFTController {
                     content = @Content(array = @ArraySchema(schema = @Schema(implementation = NFTDTO.class)))),
             @ApiResponse(responseCode = "400", description = "Bad request",
                     content = @Content(array = @ArraySchema(schema = @Schema(implementation = ErrorResponse.class))))})
-    @PostMapping(value = "/create", consumes = "application/json")
+    @PostMapping(value = "/create")
     @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN') or hasRole('USER')")
-    public ResponseEntity<?> createNFT(
-            final @ApiParam(value = "NFT parameters") @RequestBody NFTDTO nft) throws Exception {
+    public ResponseEntity<?> createNFT(final @ApiParam(value = "NFT image") @RequestPart(value = "image") @Valid MultipartFile image,
+                                       final @ApiParam(value = "Wallet id") @RequestParam(value = "walletId") Long walletId,
+                                       final @ApiParam(value = "NFT name") @RequestParam(value = "name") String nftName,
+                                       final @ApiParam(value = "NFT description") @RequestParam(value = "description") String nftDescription,
+                                       final @ApiParam(value = "NFT external link") @RequestParam(value = "externalLink", required = false) String externalLink) throws Exception {
         logger.debug("REST request to create a new NFT");
-        final NFTDTO createdNft = nftService.create(nft, userDetailsService.getUser().getId(), nft.getWalletId());
+        final NFTDTO nft = new NFTDTO();
+        nft.setName(nftName);
+        nft.setDescription(nftDescription);
+        if (externalLink != null)
+            nft.setExternalLink(externalLink);
+        nft.setWalletId(walletId);
+        final NFTDTO createdNft = nftService.create(nft, userDetailsService.getUser().getId(), image);
         return new ResponseEntity<>(utilService.getResponseBody(createdNft), HttpStatus.CREATED);
     }
 }

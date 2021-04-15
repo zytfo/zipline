@@ -57,6 +57,15 @@ public class FileStorageService {
     }
 
     /**
+     * Delete file.
+     *
+     * @param id the id
+     */
+    public void deleteFile(final UUID id) {
+        fileDBRepository.deleteById(id);
+    }
+
+    /**
      * Gets all files.
      *
      * @return the all files

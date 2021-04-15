@@ -102,7 +102,7 @@ public class FileController {
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<?> getListFiles() {
         final List<ResponseFileDTO> files = fileStorageService.getAllFiles().map(dbFile -> {
-            String fileDownloadUri = ServletUriComponentsBuilder
+            final String fileDownloadUri = ServletUriComponentsBuilder
                     .fromCurrentContextPath()
                     .path("/api/files/")
                     .path(dbFile.getFileId().toString())
