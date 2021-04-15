@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { withRouter } from "react-router-dom";
 import {
   ActionSet,
+  ConfirmDeletion,
   DeleteIcon,
   ExportIcon,
   ImportWalletContainer,
@@ -24,7 +25,11 @@ import {
   Spin,
   Typography,
 } from "antd";
-import { CopyOutlined, WalletOutlined } from "@ant-design/icons/lib";
+import {
+  CopyOutlined,
+  QuestionCircleOutlined,
+  WalletOutlined,
+} from "@ant-design/icons/lib";
 const { Paragraph } = Typography;
 
 const Wallets = () => {
@@ -46,6 +51,8 @@ const Wallets = () => {
   const [walletWithdrawals, setWalletWithdrawals] = useState<any>(null);
   const [walletBalance, setWalletBalance] = useState<any>(null);
   const [withdrawalLoading, setWithdrawalLoading] = useState<boolean>(false);
+
+  const [visible, setVisible] = useState<boolean>(false);
 
   useEffect(() => {
     walletService
@@ -110,6 +117,9 @@ const Wallets = () => {
         const newArray = [...wallets];
         newArray.splice(index, 1);
         setWallets(newArray);
+        if (newArray.length === 0) {
+          setNoWallets(true);
+        }
       })
       .catch((error) => backendService.errorHandler(error.response));
   };
@@ -186,7 +196,10 @@ const Wallets = () => {
               size="large"
               type="primary"
               key="new-wallet"
-              onClick={() => setNewWallet(true)}
+              onClick={() => {
+                setImportForm(false);
+                setNewWallet(true);
+              }}
             >
               Create Wallet
             </Button>,
@@ -194,7 +207,10 @@ const Wallets = () => {
               size="large"
               type="primary"
               key="import-wallet"
-              onClick={() => setNewWallet(true)}
+              onClick={() => {
+                setNewWallet(false);
+                setImportForm(true);
+              }}
             >
               Import Wallet
             </Button>,
@@ -265,23 +281,39 @@ const Wallets = () => {
         </ImportWalletContainer>
       )}
       {wallets.map((wallet) => (
-        <Wallet key={wallet.walletId} onClick={() => openWalletDetails(wallet)}>
+        <Wallet
+          onBlur={() => setVisible(false)}
+          visible={visible}
+          key={wallet.walletId}
+          onClick={() => openWalletDetails(wallet)}
+        >
           <WalletName>{wallet.name}</WalletName>
           <div>Address: 0x{wallet.address}</div>
-          <WalletActions>
+          <WalletActions onClick={(e) => e.stopPropagation()}>
             <ExportIcon
               onClick={(e) => {
                 e.stopPropagation();
                 exportWallet(wallet.walletId);
               }}
             />
-            <DeleteIcon
-              twoToneColor="red"
-              onClick={(e) => {
-                e.stopPropagation();
+            <ConfirmDeletion
+              placement="top"
+              title={"Delete this wallet?"}
+              icon={<QuestionCircleOutlined style={{ color: "red" }} />}
+              onConfirm={() => {
                 deleteWallet(wallet.walletId);
               }}
-            />
+              okText="Yes"
+              cancelText="No"
+            >
+              <DeleteIcon
+                twoToneColor="red"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setVisible(true);
+                }}
+              />
+            </ConfirmDeletion>
           </WalletActions>
         </Wallet>
       ))}
@@ -326,7 +358,7 @@ const Wallets = () => {
         <Paragraph>
           Balance:{" "}
           {walletBalance || walletBalance === 0 ? (
-            `${walletBalance / 1000000000000000000} BNB`
+            `${(walletBalance / 1000000000000000000).toFixed(20)} BNB`
           ) : (
             <Spin size="small" />
           )}

@@ -1,5 +1,6 @@
-import styled from "styled-components";
+import styled, { css } from "styled-components";
 import {DeleteTwoTone, ExportOutlined} from "@ant-design/icons/lib";
+import {Popconfirm} from "antd";
 
 export const WalletsContainer = styled.div`
   margin: 24px 0;
@@ -32,7 +33,9 @@ export const WalletActions = styled.div`
   right: 0;
 `;
 
-export const Wallet = styled.div`
+export const Wallet = styled.div<{
+  visible: boolean;
+}>`
   cursor: pointer;
   padding: 15px 20px;
   margin-bottom: 15px;
@@ -43,6 +46,18 @@ export const Wallet = styled.div`
   &:hover ${WalletActions} {
     display: block;
   }
+  
+  ${(props: any) =>
+  props.visible &&
+  css`
+      ${WalletActions} {
+        display: block;
+      }
+
+      ${DeleteIcon} {
+        opacity: 1;
+      }
+    `}
 `;
 
 export const DeleteIcon = styled(DeleteTwoTone)`
@@ -84,3 +99,5 @@ export const ImportWalletContainer = styled.div`
     margin-bottom: 15px;
   }
 `;
+
+export const ConfirmDeletion = styled(Popconfirm)``;

@@ -140,10 +140,15 @@ const PublicationsFeed = (props: any) => {
   /**
    * Publish new publication
    * @param publicationValue
+   * @param chosenTrades
    */
-  const publishPublication = (publicationValue: string) => {
+  const publishPublication = (publicationValue: string, chosenTrades: any[]) => {
+    const publicationDTO = {
+      content: publicationValue,
+      tradeIds: chosenTrades
+    };
     publicationsService
-      .newPublication(publicationValue)
+      .newPublication(publicationDTO)
       .then((response) => {
         setContent((oldContent) => [response.data.data, ...oldContent]);
       })

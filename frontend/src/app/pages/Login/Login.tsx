@@ -39,7 +39,7 @@ const Login = (props: any) => {
         });
         break;
     }
-  });
+  }, []);
 
   if (auth.isAuthenticated()) {
     return <Redirect to={{

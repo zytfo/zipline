@@ -7,4 +7,6 @@ export interface PublicationObject {
   tickers: string[];
   updated: Date | null;
   likesCount: number;
+  tradeIds?: any;
+  marketTradeDTOs?: any;
 }

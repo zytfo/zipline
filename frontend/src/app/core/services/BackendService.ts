@@ -15,7 +15,7 @@ class BackendService {
   post(url: string, body: any, config: any) {
     const Authorization = this.addAuth();
     config.headers = { ...config.headers, Authorization, 'Access-Control-Allow-Origin':'*' };
-    return axios.post(url, { ...body }, config);
+    return axios.post(url, body, config);
   }
 
   delete(url: string, config: any) {

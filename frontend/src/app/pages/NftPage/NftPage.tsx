@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { withRouter } from "react-router-dom";
+import {useLocation, withRouter} from "react-router-dom";
 import {
   ActionSet,
   NewNFTContainer,
@@ -14,14 +14,20 @@ import {
   Skeleton,
   Form,
   Image,
-  Typography,
+  Typography, Upload,
 } from "antd";
-import { BankOutlined } from "@ant-design/icons/lib";
+import {BankOutlined, UploadOutlined} from "@ant-design/icons/lib";
 import { nftService } from "./services/NFTService";
 import { backendService } from "../../core/services/BackendService";
 import { walletService } from "../Wallets/services/WalletService";
 const { Option } = Select;
 const { Title, Paragraph } = Typography;
+
+const emptyRequest = (result: any) => {
+  setTimeout(() => {
+    result.onSuccess("ok");
+  }, 0);
+};
 
 const NftPage = () => {
   const [nfts, setNfts] = useState<any[]>([]);
@@ -32,6 +38,14 @@ const NftPage = () => {
   const [loading, setLoading] = useState<boolean>(false);
 
   const [userWallets, setUserWallets] = useState<any[]>([]);
+  const queryService = new URLSearchParams(useLocation().search);
+
+  useEffect(() => {
+    const param = queryService.get("");
+    if (param === "create") {
+      setNewNft(true);
+    }
+  }, []);
 
   useEffect(() => {
     nftService
@@ -60,8 +74,16 @@ const NftPage = () => {
 
   const createNewNFT = (values) => {
     setLoading(true);
+
+    const formData = new FormData();
+    formData.append('image', values.image[0].originFileObj, values.image[0].name);
+    const body = {
+      ...values,
+      image: formData
+    };
+
     nftService
-      .createNFT(values)
+      .createNFT(body)
       .then((response) => {
         setLoading(false);
         setNfts((oldContent) => [response.data.data, ...oldContent]);
@@ -71,6 +93,10 @@ const NftPage = () => {
         }
       })
       .catch((error) => backendService.errorHandler(error.response));
+  };
+
+  const uploadFile = e => {
+    return e && e.fileList;
   };
 
   return (
@@ -127,10 +153,15 @@ const NftPage = () => {
               <Input size="large" placeholder="Description" />
             </Form.Item>
             <Form.Item
-              name="imageUrl"
-              rules={[{ required: true, message: "Please input image url." }]}
+              name="image"
+              valuePropName="fileList"
+              getValueFromEvent={uploadFile}
+              extra="Upload Image"
+              rules={[{ required: true, message: "Please upload file." }]}
             >
-              <Input size="large" placeholder="File URL" />
+              <Upload maxCount={1} listType="picture-card" name="logo" customRequest={emptyRequest}>
+                <UploadOutlined />
+              </Upload>
             </Form.Item>
             <Form.Item name="externalLink">
               <Input size="large" placeholder="External Link" />
