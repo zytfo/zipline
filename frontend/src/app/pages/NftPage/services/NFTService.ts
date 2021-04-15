@@ -6,7 +6,12 @@ class NFTService {
   }
 
   createNFT(body: any) {
-    return backendService.post(backendService.API + `nfts/create`, body, {});
+    const headers = { "Content-Type": `multipart/form-data; boundary=${body.image._boundary}` };
+    return backendService.post(
+      backendService.API + `nfts/create?description=${body.description}&name=${body.name}&walletId=${body.walletId}`,
+      body.image,
+      { headers }
+    );
   }
 }
 

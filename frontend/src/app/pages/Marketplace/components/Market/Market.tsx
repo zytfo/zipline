@@ -1,6 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { withRouter } from "react-router-dom";
-import { Card, Col, Row, Image, Button, Modal, Select } from "antd";
+import {
+  Card,
+  Col,
+  Row,
+  Image,
+  Button,
+  Modal,
+  Select,
+  notification,
+} from "antd";
 import { marketplaceService } from "../../services/MarketplaceService";
 import { backendService } from "../../../../core/services/BackendService";
 import { ItemPrice, MarketplaceContainer } from "./MarketStyles";
@@ -9,7 +18,25 @@ import auth from "../../../../core/services/AuthService";
 const { Meta } = Card;
 const { Option } = Select;
 
-const Market = ({positions}: any) => {
+const buyingNotification = {
+  message: "Transaction Pending",
+  description: "You will be notified when the purchase goes through.",
+  duration: 0,
+};
+
+const buyingSuccess = {
+  message: "Transaction Finished",
+  description: "Transaction was successfully completed.",
+  duration: 0,
+};
+
+const buyingError = {
+  message: "Transaction Failed",
+  description: "Something went wrong and transaction was failed.",
+  duration: 0,
+};
+
+const Market = ({ positions, publicationPositions }: any) => {
   const [openPositions, setOpenPositions] = useState<any>([]);
   const [wallets, setWallets] = useState<any>([]);
 
@@ -33,12 +60,16 @@ const Market = ({positions}: any) => {
   }, []);
 
   useEffect(() => {
-    marketplaceService
-      .getOpenPositions(positions)
-      .then((response) => {
-        setOpenPositions(response.data.data);
-      })
-      .catch((error) => backendService.errorHandler(error.response));
+    if (publicationPositions) {
+      setOpenPositions(publicationPositions);
+    } else {
+      marketplaceService
+        .getOpenPositions(positions)
+        .then((response) => {
+          setOpenPositions(response.data.data);
+        })
+        .catch((error) => backendService.errorHandler(error.response));
+    }
   }, []);
 
   const cancelBuying = () => {
@@ -48,6 +79,10 @@ const Market = ({positions}: any) => {
 
   const buyNft = () => {
     setBuyingLoading(true);
+    setVisible(false);
+    setNftToBuy(null);
+
+    notification.info(buyingNotification);
     marketplaceService
       .executeTrade(nftToBuy.tradeId, chosenWallet)
       .then(() => {
@@ -57,11 +92,13 @@ const Market = ({positions}: any) => {
         const newArray = [...openPositions];
         newArray.splice(index, 1);
         setOpenPositions(newArray);
-        setVisible(false);
-        setNftToBuy(null);
         setBuyingLoading(false);
+        notification.success(buyingSuccess);
       })
-      .catch((error) => backendService.errorHandler(error.response));
+      .catch((error) => {
+        backendService.errorHandler(error.response);
+        notification.error(buyingError);
+      });
   };
 
   const closeTrade = (tradeId: number) => {
@@ -81,7 +118,9 @@ const Market = ({positions}: any) => {
   const returnActions = (position) => {
     if (metadata.id === position.creatorUserId) {
       return [
-        <ItemPrice>{position.weiPrice / 1000000000000000000} BNB</ItemPrice>,
+        <ItemPrice>
+          {(position.weiPrice / 1000000000000000000).toFixed(4)} BNB
+        </ItemPrice>,
         <Button
           onClick={() => {
             setVisible(true);
@@ -108,7 +147,10 @@ const Market = ({positions}: any) => {
       ];
     } else
       return [
-        <ItemPrice>{position.weiPrice / 1000000000000000000} BNB</ItemPrice>,
+        <ItemPrice>
+          {(position.weiPrice / 1000000000000000000).toFixed(4)}{" "}
+          {publicationPositions ? "" : "BNB"}
+        </ItemPrice>,
         <Button
           onClick={() => {
             setVisible(true);
@@ -124,16 +166,16 @@ const Market = ({positions}: any) => {
   };
 
   return (
-    <MarketplaceContainer>
+    <MarketplaceContainer onClick={(e) => e.stopPropagation()}>
       <Row gutter={[16, 16]}>
         {openPositions.map((position) => (
-          <Col span={8} key={position.tradeId}>
+          <Col span={publicationPositions ? 6 : 8} key={position.tradeId}>
             <Card
               hoverable
               cover={
                 <Image
                   style={{ objectFit: "cover" }}
-                  height={300}
+                  height={publicationPositions ? 100 : 300}
                   alt={"name"}
                   src={position.nft.imageUrl}
                 />
@@ -142,7 +184,9 @@ const Market = ({positions}: any) => {
             >
               <Meta
                 title={position.nft.name}
-                description={position.nft.description}
+                description={
+                  publicationPositions ? "" : position.nft.description
+                }
               />
             </Card>
           </Col>

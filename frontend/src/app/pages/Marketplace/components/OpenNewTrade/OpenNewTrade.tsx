@@ -91,7 +91,7 @@ const OpenNewTrade = () => {
           subTitle="Create it now!"
           extra={[
             <Button size="large" type="primary" key="new-nft">
-              <Link to={`/nft`}>Create NFT </Link>
+              <Link to={`/nft?=create`}>Create NFT </Link>
             </Button>,
           ]}
         />

@@ -1,7 +1,7 @@
 import styled, { css } from "styled-components";
 import { Divider, Popconfirm, Typography } from "antd";
 import {
-  DeleteOutlined,
+  DeleteTwoTone,
   EditOutlined,
   HeartOutlined,
   HeartTwoTone,
@@ -53,7 +53,7 @@ export const PublicationItem = styled.div<{
   margin-bottom: 15px;
   background-color: #fff;
   border-radius: 3px;
-  box-shadow: 0 0 20px rgba(0,0,0,0.08);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
 
   ${(props: any) =>
     props.isAuthor &&
@@ -86,6 +86,12 @@ export const PublicationDivider = styled(Divider)`
 
 export const PublicationContent = styled(Paragraph)`
   margin-top: 12px;
+  
+  ul, li {
+    list-style: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
 `;
 
 export const LikedIcon = styled(HeartTwoTone)`
@@ -111,7 +117,7 @@ export const EditIcon = styled(EditOutlined)`
   }
 `;
 
-export const DeleteIcon = styled(DeleteOutlined)`
+export const DeleteIcon = styled(DeleteTwoTone)`
   font-size: 22px;
   opacity: 0.5;
 

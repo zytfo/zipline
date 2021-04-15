@@ -22,6 +22,7 @@ import {
   UnlikeIcon,
 } from "./PublicationModalStyles";
 import Comments from "../../../../core/components/Comments/Comments";
+import Market from "../../../Marketplace/components/Market/Market";
 
 const PublicationModal: FunctionComponent<any> = ({
   itemId,
@@ -202,6 +203,9 @@ const PublicationModal: FunctionComponent<any> = ({
           textToHighlight={publication?.content || ""}
           highlightTag={getTicker}
         />
+        {
+          publication?.tradeIds && <Market publicationPositions={publication?.marketTradeDTOs} positions={"all_open"}/>
+        }
       </Modal>
 
       <Modal

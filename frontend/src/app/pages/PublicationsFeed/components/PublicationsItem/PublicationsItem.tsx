@@ -3,7 +3,7 @@ import { Link, withRouter } from "react-router-dom";
 import moment from "moment";
 import { publicationsService } from "../../services/PublicationsService";
 import { backendService } from "../../../../core/services/BackendService";
-import { Button, List, Modal } from "antd";
+import {Button, List, Modal} from "antd";
 import Highlighter from "react-highlight-words";
 import {
   ActionArea,
@@ -24,6 +24,7 @@ import {
   UnlikeIcon,
 } from "./PublicationsItemStyles";
 import { QuestionCircleOutlined } from "@ant-design/icons/lib";
+import Market from "../../../Marketplace/components/Market/Market";
 
 const PublicationsItem: FunctionComponent<any> = ({
   item,
@@ -113,6 +114,9 @@ const PublicationsItem: FunctionComponent<any> = ({
               textToHighlight={item.content}
               highlightTag={getTicker}
             />
+            {
+              item.tradeIds && <Market publicationPositions={item.marketTradeDTOs} positions={"all_open"}/>
+            }
           </PublicationContent>
         </ActionArea>
 
@@ -139,7 +143,7 @@ const PublicationsItem: FunctionComponent<any> = ({
               okText="Yes"
               cancelText="No"
             >
-              <DeleteIcon onClick={() => setVisible(true)} />
+              <DeleteIcon twoToneColor="red" onClick={() => setVisible(true)} />
             </ConfirmDeletion>
           </ActionSet>
         </LowerMenuContainer>

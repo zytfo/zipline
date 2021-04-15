@@ -57,12 +57,9 @@ class PublicationsService {
 
   /**
    * Publish new post
-   * @param value
+   * @param body
    */
-  newPublication(value: string) {
-    const body = {
-      content: value,
-    };
+  newPublication(body: any) {
     return backendService.post(
       backendService.API + `publication/create`,
       body,
