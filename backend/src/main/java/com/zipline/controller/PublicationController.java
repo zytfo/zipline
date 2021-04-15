@@ -204,12 +204,12 @@ public class PublicationController {
         loadedPublication.setTickers(utilService.extractTickers(publicationDTO.getContent()));
         loadedPublication.setUpdated(LocalDateTime.now());
         loadedPublication.setTradeIds(marketService.checkAndGetOpenedTrades(publicationDTO.getTradeIds()));
-        if (publicationDTO.getTradeIds() != null)
-            publicationDTO.setMarketTradeDTOs(marketService.getTradesByTradeIds(publicationDTO.getTradeIds()));
         final Publication publication = publicationService.save(loadedPublication);
         publicationDTO = modelMapper.map(publication, PublicationDTO.class);
         publicationDTO.setCreatedBy(userDetails.getUsername());
         publicationDTO.setNumberOfComments(commentService.getNumberOfCommentsForPost(PostType.PUBLICATION, publicationId));
+        if (publicationDTO.getTradeIds() != null)
+            publicationDTO.setMarketTradeDTOs(marketService.getTradesByTradeIds(publicationDTO.getTradeIds()));
         return new ResponseEntity<>(utilService.getResponseBody(publicationDTO), HttpStatus.ACCEPTED);
     }
 
