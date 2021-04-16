@@ -77,3 +77,5 @@ management:
         prometheus:
           enabled: true
       application: zipline-backend
+cointelegraph:
+  urlRSS: https://cointelegraph.com/rss
