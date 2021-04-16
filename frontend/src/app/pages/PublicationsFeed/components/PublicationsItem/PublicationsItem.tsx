@@ -13,7 +13,6 @@ import {
   ConfirmDeletion,
   DateInfo,
   DeleteIcon,
-  EditIcon,
   LikedIcon,
   Likes,
   LikesCount,
@@ -115,7 +114,7 @@ const PublicationsItem: FunctionComponent<any> = ({
               highlightTag={getTicker}
             />
             {
-              item.tradeIds && <Market publicationPositions={item.marketTradeDTOs} positions={"all_open"}/>
+              item.tradeIds && item.tradeIds.length !== 0 && <Market publicationPositions={item.marketTradeDTOs} positions={"all_open"}/>
             }
           </PublicationContent>
         </ActionArea>
@@ -134,7 +133,7 @@ const PublicationsItem: FunctionComponent<any> = ({
             </LikesCount>
           </Likes>
           <ActionSet>
-            <EditIcon />
+            {/*<EditIcon />*/}
             <ConfirmDeletion
               placement="top"
               title={"Delete this publication?"}

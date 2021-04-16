@@ -4,7 +4,8 @@ import auth from "./AuthService";
 import { ErrorResponse } from "../interfaces/ErrorResponse";
 
 class BackendService {
-  API = "https://zipline.link/api/";
+  // API = "https://zipline.link/api/";
+  API = "/api/";
 
   get(url: string, config: any) {
     const Authorization = this.addAuth();

@@ -9,6 +9,7 @@ import {
   Modal,
   Select,
   notification,
+  Tooltip,
 } from "antd";
 import { marketplaceService } from "../../services/MarketplaceService";
 import { backendService } from "../../../../core/services/BackendService";
@@ -21,19 +22,19 @@ const { Option } = Select;
 const buyingNotification = {
   message: "Transaction Pending",
   description: "You will be notified when the purchase goes through.",
-  duration: 0,
+  duration: 30,
 };
 
 const buyingSuccess = {
   message: "Transaction Finished",
   description: "Transaction was successfully completed.",
-  duration: 0,
+  duration: 30,
 };
 
 const buyingError = {
   message: "Transaction Failed",
   description: "Something went wrong and transaction was failed.",
-  duration: 0,
+  duration: 30,
 };
 
 const Market = ({ positions, publicationPositions }: any) => {
@@ -119,7 +120,16 @@ const Market = ({ positions, publicationPositions }: any) => {
     if (metadata.id === position.creatorUserId) {
       return [
         <ItemPrice>
-          {(position.weiPrice / 1000000000000000000).toFixed(4)} BNB
+          <Tooltip
+            placement="top"
+            title={
+              (position.weiPrice / 1000000000000000000).toFixed(20) + " BNB"
+            }
+          >
+            {(position.weiPrice / 1000000000000000000).toFixed(4)}
+            {"... "}
+            {publicationPositions ? "" : "BNB"}
+          </Tooltip>
         </ItemPrice>,
         <Button
           onClick={() => {
@@ -148,8 +158,16 @@ const Market = ({ positions, publicationPositions }: any) => {
     } else
       return [
         <ItemPrice>
-          {(position.weiPrice / 1000000000000000000).toFixed(4)}{" "}
-          {publicationPositions ? "" : "BNB"}
+          <Tooltip
+            placement="top"
+            title={
+              (position.weiPrice / 1000000000000000000).toFixed(20) + " BNB"
+            }
+          >
+            {(position.weiPrice / 1000000000000000000).toFixed(4)}
+            {"... "}
+            {publicationPositions ? "" : "BNB"}
+          </Tooltip>
         </ItemPrice>,
         <Button
           onClick={() => {
