@@ -1,12 +1,11 @@
 #!/bin/sh
 
-killall node
-
 git pull
 
 npm i
 
 npm run build
 
-nohup npm start &
+cp -r ./build/* /var/www/zipline/html/
 
+systemctl restart nginx

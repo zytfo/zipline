@@ -9,6 +9,7 @@ import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
 
 import javax.persistence.*;
+import java.math.BigInteger;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -40,6 +41,10 @@ public class Publication {
     @Type(type = "list-array")
     @Column(name = "tickers", columnDefinition = "varchar[]")
     private List<String> tickers;
+
+    @Type(type = "list-array")
+    @Column(name = "trades", columnDefinition = "bigint[]")
+    private List<Long> tradeIds;
 
     @Column(name = "created")
     private LocalDateTime created;

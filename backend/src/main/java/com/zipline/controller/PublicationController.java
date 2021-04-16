@@ -9,10 +9,7 @@ import com.zipline.model.PostType;
 import com.zipline.model.Publication;
 import com.zipline.page.PublicationPage;
 import com.zipline.criteria.PublicationSearchCriteria;
-import com.zipline.service.CommentService;
-import com.zipline.service.LikeService;
-import com.zipline.service.PublicationService;
-import com.zipline.service.UtilService;
+import com.zipline.service.*;
 import io.swagger.annotations.ApiParam;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -51,6 +48,7 @@ public class PublicationController {
     private final UtilService utilService;
     private final LikeService likeService;
     private final CommentService commentService;
+    private final MarketService marketService;
 
     /**
      * Instantiates a new Publication controller.
@@ -61,6 +59,7 @@ public class PublicationController {
      * @param utilService        the util service
      * @param likeService        the like service
      * @param commentService     the comment service
+     * @param marketService      the market service
      */
     @Autowired
     public PublicationController(final PublicationService publicationService,
@@ -68,13 +67,15 @@ public class PublicationController {
                                  final UserDetailsServiceImpl userDetailsService,
                                  final UtilService utilService,
                                  final LikeService likeService,
-                                 final CommentService commentService) {
+                                 final CommentService commentService,
+                                 final MarketService marketService) {
         this.publicationService = publicationService;
         this.modelMapper = modelMapper;
         this.userDetailsService = userDetailsService;
         this.utilService = utilService;
         this.likeService = likeService;
         this.commentService = commentService;
+        this.marketService = marketService;
     }
 
     /**
@@ -104,6 +105,8 @@ public class PublicationController {
             publicationDTO.setCreatedBy(userDetailsService.loadUserByUserId(publication.getCreatedBy()).getUsername());
             publicationDTO.setSelfLiked(likeService.checkIfLikeExists(PostType.PUBLICATION, publication.getPublicationId(), userDetails.getId()));
             publicationDTO.setLikesCount(likeService.getNumberOfLikesByPostTypeAndPostId(PostType.PUBLICATION, publication.getPublicationId()));
+            if (publicationDTO.getTradeIds() != null)
+                publicationDTO.setMarketTradeDTOs(marketService.getTradesByTradeIds(publicationDTO.getTradeIds()));
             publicationDTO.setNumberOfComments(commentService.getNumberOfCommentsForPost(PostType.PUBLICATION, publication.getPublicationId()));
             publicationDTOs.add(publicationDTO);
         }
@@ -133,6 +136,8 @@ public class PublicationController {
         publicationDTO.setCreatedBy(userDetailsService.loadUserByUserId(publication.getCreatedBy()).getUsername());
         publicationDTO.setSelfLiked(likeService.checkIfLikeExists(PostType.PUBLICATION, publicationId, userDetails.getId()));
         publicationDTO.setLikesCount(likeService.getNumberOfLikesByPostTypeAndPostId(PostType.PUBLICATION, publicationId));
+        if (publicationDTO.getTradeIds() != null)
+            publicationDTO.setMarketTradeDTOs(marketService.getTradesByTradeIds(publicationDTO.getTradeIds()));
         publicationDTO.setNumberOfComments(commentService.getNumberOfCommentsForPost(PostType.PUBLICATION, publicationId));
         return new ResponseEntity<>(utilService.getResponseBody(publicationDTO), HttpStatus.OK);
     }
@@ -140,7 +145,7 @@ public class PublicationController {
     /**
      * Create publication response entity.
      *
-     * @param content the content
+     * @param publicationDTO the publication
      * @return the response entity
      */
     @Operation(summary = "Create publication", description = "Create publication for moderator, user or admin", tags = {"publications-controller"})
@@ -152,25 +157,28 @@ public class PublicationController {
     @PostMapping(value = "/create")
     @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN') or hasRole('USER')")
     public ResponseEntity<?> createPublication(
-            final @ApiParam(value = "Content of the publication") @RequestParam("content") String content) {
+            @ApiParam(value = "The new publication") @RequestBody PublicationDTO publicationDTO) {
         logger.debug("REST request to create a new publication");
         final UserDetailsImpl userDetails = userDetailsService.getUser();
         Publication publication = new Publication();
-        publication.setTickers(utilService.extractTickers(content));
-        publication.setContent(content);
+        publication.setTickers(utilService.extractTickers(publicationDTO.getContent()));
+        publication.setContent(publicationDTO.getContent());
         publication.setCreated(LocalDateTime.now());
         publication.setCreatedBy(userDetails.getId());
+        publication.setTradeIds(marketService.checkAndGetOpenedTrades(publicationDTO.getTradeIds()));
         publication = publicationService.save(publication);
-        final PublicationDTO publicationDTO = modelMapper.map(publication, PublicationDTO.class);
+        publicationDTO = modelMapper.map(publication, PublicationDTO.class);
         publicationDTO.setCreatedBy(userDetails.getUsername());
+        if (publicationDTO.getTradeIds() != null)
+            publicationDTO.setMarketTradeDTOs(marketService.getTradesByTradeIds(publicationDTO.getTradeIds()));
         return new ResponseEntity<>(utilService.getResponseBody(publicationDTO), HttpStatus.CREATED);
     }
 
     /**
      * Update publication response entity.
      *
-     * @param content       the content
-     * @param publicationId the publication id
+     * @param publicationDTO the publication
+     * @param publicationId  the publication id
      * @return the response entity
      */
     @Operation(summary = "Update publication", description = "Update publication by id for moderator, admin or user", tags = {"publications-controller"})
@@ -184,7 +192,7 @@ public class PublicationController {
     @PutMapping(value = "/{publicationId}")
     @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN') or hasRole('USER')")
     public ResponseEntity<?> updatePublication(
-            final @ApiParam(value = "Content to be updated") @RequestParam("content") String content,
+            @ApiParam(value = "Publication to be updated") @RequestBody PublicationDTO publicationDTO,
             final @ApiParam(value = "Publication id to be updated") @PathVariable(value = "publicationId") Long publicationId) {
         logger.debug("REST request to update the publication");
         final Publication loadedPublication = publicationService.getPublicationById(publicationId);
@@ -192,13 +200,16 @@ public class PublicationController {
         if (!loadedPublication.getCreatedBy().equals(userDetails.getId())) {
             throw new NoPermissionException(userDetails.getUsername(), userDetailsService.loadUserByUserId(loadedPublication.getCreatedBy()).getUsername(), "update the publication");
         }
-        loadedPublication.setContent(content);
-        loadedPublication.setTickers(utilService.extractTickers(content));
+        loadedPublication.setContent(publicationDTO.getContent());
+        loadedPublication.setTickers(utilService.extractTickers(publicationDTO.getContent()));
         loadedPublication.setUpdated(LocalDateTime.now());
+        loadedPublication.setTradeIds(marketService.checkAndGetOpenedTrades(publicationDTO.getTradeIds()));
         final Publication publication = publicationService.save(loadedPublication);
-        final PublicationDTO publicationDTO = modelMapper.map(publication, PublicationDTO.class);
+        publicationDTO = modelMapper.map(publication, PublicationDTO.class);
         publicationDTO.setCreatedBy(userDetails.getUsername());
         publicationDTO.setNumberOfComments(commentService.getNumberOfCommentsForPost(PostType.PUBLICATION, publicationId));
+        if (publicationDTO.getTradeIds() != null)
+            publicationDTO.setMarketTradeDTOs(marketService.getTradesByTradeIds(publicationDTO.getTradeIds()));
         return new ResponseEntity<>(utilService.getResponseBody(publicationDTO), HttpStatus.ACCEPTED);
     }
 

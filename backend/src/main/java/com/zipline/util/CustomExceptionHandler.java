@@ -286,6 +286,19 @@ public class CustomExceptionHandler extends ResponseEntityExceptionHandler {
         return new ResponseEntity(error, HttpStatus.UNAUTHORIZED);
     }
 
+    /**
+     * Handle no such opened trade exception response entity.
+     *
+     * @param ex      the ex
+     * @param request the request
+     * @return the response entity
+     */
+    @ExceptionHandler(NoSuchOpenedTradeException.class)
+    public final ResponseEntity<?> handleNoSuchOpenedTradeException(NoSuchOpenedTradeException ex, WebRequest request) {
+        final ErrorResponse error = new ErrorResponse(getStatus(404, ex.getLocalizedMessage()));
+        return new ResponseEntity(error, HttpStatus.NOT_FOUND);
+    }
+
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
         final ErrorResponse error = new ErrorResponse(getStatus(404, ex.getLocalizedMessage()));
