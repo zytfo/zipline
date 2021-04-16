@@ -14,7 +14,6 @@ import {
   ConfirmDeletion,
   DateInfo,
   DeleteIcon,
-  EditIcon,
   LikedIcon,
   Likes,
   LikesCount,
@@ -165,7 +164,7 @@ const PublicationModal: FunctionComponent<any> = ({
               </Likes>
               {metadata?.username === publication?.createdBy && (
                 <div>
-                  <EditIcon />
+                  {/*<EditIcon />*/}
                   <ConfirmDeletion
                     placement="top"
                     title={"Delete this publication?"}

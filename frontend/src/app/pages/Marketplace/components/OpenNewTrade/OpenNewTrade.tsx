@@ -3,16 +3,32 @@ import { Link, withRouter } from "react-router-dom";
 import { nftService } from "../../../NftPage/services/NFTService";
 import { backendService } from "../../../../core/services/BackendService";
 import { NewOrderContainer, NFTInfo, NFTItem } from "./OpenNewOrderStyles";
-import { Button, Form, Image, Input, Result, Typography } from "antd";
+import {Button, Form, Image, Input, notification, Result, Typography} from "antd";
 import { BankOutlined } from "@ant-design/icons/lib";
 import { marketplaceService } from "../../services/MarketplaceService";
 const { Title, Paragraph } = Typography;
 
+const nftNotification = {
+  message: "Your NFT is being placed",
+  description: "You will be notified when the placing goes through.",
+  duration: 30,
+};
+
+const nftNotificationSuccess = {
+  message: "Your NFT was placed",
+  description: "Placing was successfully completed.",
+  duration: 30,
+};
+
+const nftNotificationError = {
+  message: "Your NFT was NOT placed",
+  description: "Something went wrong and placing was failed.",
+  duration: 30,
+};
+
 const OpenNewTrade = () => {
   const [nfts, setNfts] = useState<any[]>([]);
   const [noNFts, setNoNfts] = useState<boolean>(false);
-
-  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     nftService
@@ -29,7 +45,7 @@ const OpenNewTrade = () => {
   }, []);
 
   const placeOrder = (id: number, price: string) => {
-    setLoading(true);
+    notification.info(nftNotification);
     marketplaceService
       .newOrder(id, parseFloat(price))
       .then(() => {
@@ -39,11 +55,11 @@ const OpenNewTrade = () => {
         const newArray = [...nfts];
         newArray.splice(index, 1);
         setNfts(newArray);
-        setLoading(false);
+        notification.success(nftNotificationSuccess);
       })
       .catch((error) => {
         backendService.errorHandler(error.response);
-        setLoading(false);
+        notification.error(nftNotificationError);
       });
   };
 
@@ -76,7 +92,7 @@ const OpenNewTrade = () => {
                 <Input suffix="BNB" placeholder="Price" />
               </Form.Item>
               <Form.Item>
-                <Button loading={loading} type="primary" htmlType="submit">
+                <Button type="primary" htmlType="submit">
                   Place
                 </Button>
               </Form.Item>

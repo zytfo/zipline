@@ -20,6 +20,7 @@ import {
   Input,
   message,
   Modal,
+  notification,
   Result,
   Skeleton,
   Spin,
@@ -31,6 +32,24 @@ import {
   WalletOutlined,
 } from "@ant-design/icons/lib";
 const { Paragraph } = Typography;
+
+const withdrawalNotification = {
+  message: "Withdrawal is being processed",
+  description: "You will be notified when the withdrawal goes through.",
+  duration: 30,
+};
+
+const withdrawalSuccess = {
+  message: "Withdrawal finished",
+  description: "Withdrawal was successfully completed.",
+  duration: 30,
+};
+
+const withdrawalError = {
+  message: "Withdrawal failed",
+  description: "Something went wrong and withdrawal was failed.",
+  duration: 30,
+};
 
 const Wallets = () => {
   const [wallets, setWallets] = useState<any[]>([]);
@@ -170,6 +189,7 @@ const Wallets = () => {
 
   const withdrawWallet = () => {
     setWithdrawalLoading(true);
+    notification.info(withdrawalNotification);
     walletService
       .withdrawWallet(walletData.walletId)
       .then(() => {
@@ -177,8 +197,13 @@ const Wallets = () => {
         setWalletWithdrawals(null);
         setWithdrawalLoading(false);
         getBalanceAndWithdrawals(walletData);
+        notification.success(withdrawalSuccess);
       })
-      .catch((error) => backendService.errorHandler(error.response));
+      .catch((error) => {
+        backendService.errorHandler(error.response);
+        notification.error(withdrawalError);
+
+      });
   };
 
   return (

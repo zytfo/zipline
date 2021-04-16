@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {useLocation, withRouter} from "react-router-dom";
+import { useLocation, withRouter } from "react-router-dom";
 import {
   ActionSet,
   NewNFTContainer,
@@ -14,9 +14,11 @@ import {
   Skeleton,
   Form,
   Image,
-  Typography, Upload,
+  Typography,
+  Upload,
+  notification,
 } from "antd";
-import {BankOutlined, UploadOutlined} from "@ant-design/icons/lib";
+import { BankOutlined, UploadOutlined } from "@ant-design/icons/lib";
 import { nftService } from "./services/NFTService";
 import { backendService } from "../../core/services/BackendService";
 import { walletService } from "../Wallets/services/WalletService";
@@ -29,13 +31,29 @@ const emptyRequest = (result: any) => {
   }, 0);
 };
 
+const nftNotification = {
+  message: "Your NFT is being created",
+  description: "You will be notified when the creation goes through.",
+  duration: 30,
+};
+
+const nftNotificationSuccess = {
+  message: "Your NFT was created",
+  description: "Placing was successfully completed.",
+  duration: 30,
+};
+
+const nftNotificationError = {
+  message: "Your NFT was NOT created",
+  description: "Something went wrong and creation was failed.",
+  duration: 30,
+};
+
 const NftPage = () => {
   const [nfts, setNfts] = useState<any[]>([]);
   const [noNFts, setNoNfts] = useState<boolean>(false);
 
   const [newNft, setNewNft] = useState<boolean>(false);
-
-  const [loading, setLoading] = useState<boolean>(false);
 
   const [userWallets, setUserWallets] = useState<any[]>([]);
   const queryService = new URLSearchParams(useLocation().search);
@@ -73,29 +91,35 @@ const NftPage = () => {
   }, []);
 
   const createNewNFT = (values) => {
-    setLoading(true);
-
+    notification.info(nftNotification);
     const formData = new FormData();
-    formData.append('image', values.image[0].originFileObj, values.image[0].name);
+    formData.append(
+      "image",
+      values.image[0].originFileObj,
+      values.image[0].name
+    );
     const body = {
       ...values,
-      image: formData
+      image: formData,
     };
+    setNewNft(false);
 
     nftService
       .createNFT(body)
       .then((response) => {
-        setLoading(false);
         setNfts((oldContent) => [response.data.data, ...oldContent]);
-        setNewNft(false);
         if (noNFts) {
           setNoNfts(false);
         }
+        notification.success(nftNotificationSuccess);
       })
-      .catch((error) => backendService.errorHandler(error.response));
+      .catch((error) => {
+        backendService.errorHandler(error.response);
+        notification.error(nftNotificationError);
+      });
   };
 
-  const uploadFile = e => {
+  const uploadFile = (e) => {
     return e && e.fileList;
   };
 
@@ -159,7 +183,12 @@ const NftPage = () => {
               extra="Upload Image"
               rules={[{ required: true, message: "Please upload file." }]}
             >
-              <Upload maxCount={1} listType="picture-card" name="logo" customRequest={emptyRequest}>
+              <Upload
+                maxCount={1}
+                listType="picture-card"
+                name="logo"
+                customRequest={emptyRequest}
+              >
                 <UploadOutlined />
               </Upload>
             </Form.Item>
@@ -185,12 +214,7 @@ const NftPage = () => {
               </Select>
             </Form.Item>
             <Form.Item>
-              <Button
-                size="large"
-                type="primary"
-                htmlType="submit"
-                loading={loading}
-              >
+              <Button size="large" type="primary" htmlType="submit">
                 Create NFT
               </Button>
             </Form.Item>
