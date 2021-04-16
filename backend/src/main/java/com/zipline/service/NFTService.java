@@ -178,11 +178,7 @@ public class NFTService implements Consumer<Zipline.TransferEventResponse> {
                 .filter((Wallet w) -> w.getWalletId().equals(nft.getWalletId())).findAny()
                 .orElseThrow(() -> new NoSuchWalletException(nft.getWalletId()));
         final FileDB fileDB = fileStorageService.store(image);
-        final String fileDownloadUri = ServletUriComponentsBuilder
-                .fromCurrentContextPath()
-                .path("/api/files/")
-                .path(fileDB.getFileId().toString())
-                .toUriString();
+        final String fileDownloadUri = "https://zipline.link/api/files/" + fileDB.getFileId().toString();
 
         final JSONObject tokenURI = new JSONObject();
         tokenURI.put("name", nft.getName());
