@@ -36,9 +36,8 @@ import java.util.List;
  * Helper utils to communicate with Web3j API
  */
 public class Web3Helpers {
-    private static final String ROPSTEN_NODE_ADDRESS = "https://ropsten.infura.io/v3/dfa2b7d4df384d47970010b94c8a9519";
     private static final String BINANCE_TEST_NODE_ADDRESS = "https://data-seed-prebsc-1-s1.binance.org:8545";
-    private static final String CONTRACT_ADDRESS = "0xF4Ce23586D037cFE538c724FC1B08a130Fbc2571";
+    private static final String CONTRACT_ADDRESS = "0x0b5CB1bEcB8a05d6d00662eAE4ce2A286DC89048";
     private static final byte CHAIN_ID = 97; // Binance test chain ID; mainnet is 56, https://docs.binance.org/smart-chain/wallet/metamask.html
 
     private static final File TEMP_WALLET_DIRECTORY = new File("/tmp/");
