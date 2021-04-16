@@ -181,9 +181,9 @@ const PublicationsFeed = (props: any) => {
           loader={<Skeleton avatar paragraph={{ rows: 4 }} active />}
           endline={<Result status="success" title="You reached the end!" />}
           isMoreContent={isEndOfContent}
-          componentData={content?.map((item, index) => (
+          componentData={content?.map((item) => (
             <PublicationsItem
-              key={index}
+              key={item.publicationId}
               item={item}
               metadata={metadata}
               openPublication={() => {
