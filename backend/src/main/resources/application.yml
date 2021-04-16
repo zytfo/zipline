@@ -38,7 +38,7 @@ spring:
             non_contextual_creation: true
   mail:
     host: smtp.gmail.com
-    password: notfoundsoftware404
+    password: hV2qH9fY9lZ5sI4kN5uS
     port: 465
     properties:
       mail:
@@ -52,7 +52,7 @@ spring:
         transport:
           protocol: smtps
     protocol: smtps
-    username: otusbackenddemo@gmail.com
+    username: ziplinelink@gmail.com
   main:
     allow-bean-definition-overriding: true
     banner-mode: off
