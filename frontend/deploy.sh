@@ -8,6 +8,3 @@ npm run build
 
 cp -r ./build/* /var/www/zipline/html/
 
-nginx -s stop
-
-nginx
