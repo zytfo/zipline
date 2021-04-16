@@ -94,7 +94,7 @@ public class CommentController {
         CommentDTO commentDTO;
         for (Comment comment : commentList) {
             commentDTO = modelMapper.map(comment, CommentDTO.class);
-            commentDTO.setAuthor(userDetails.getUsername());
+            commentDTO.setAuthor(userDetailsService.loadUserByUserId(comment.getUserId()).getUsername());
             commentDTO.setSelfLiked(likeService.checkIfLikeExists(PostType.COMMENT, comment.getCommentId(), userDetails.getId()));
             commentDTO.setLikesCount(likeService.getNumberOfLikesByPostTypeAndPostId(PostType.COMMENT, comment.getCommentId()));
             commentDTO.setTickers(utilService.extractTickers(comment.getMessage()));
@@ -121,7 +121,7 @@ public class CommentController {
         logger.debug("REST request to get a comment {}", commentId);
         final UserDetailsImpl userDetails = userDetailsService.getUser();
         CommentDTO commentDTO = modelMapper.map(commentService.getCommentById(commentId), CommentDTO.class);
-        commentDTO.setAuthor(userDetails.getUsername());
+        commentDTO.setAuthor(commentDTO.getAuthor());
         commentDTO.setSelfLiked(likeService.checkIfLikeExists(PostType.COMMENT, commentId, userDetails.getId()));
         commentDTO.setLikesCount(likeService.getNumberOfLikesByPostTypeAndPostId(PostType.COMMENT, commentId));
         commentDTO.setTickers(utilService.extractTickers(commentDTO.getMessage()));
