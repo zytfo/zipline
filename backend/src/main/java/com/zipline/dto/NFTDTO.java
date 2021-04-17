@@ -1,12 +1,13 @@
 package com.zipline.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.Setter;
 
 import javax.validation.constraints.NotEmpty;
 import java.io.Serializable;
+import java.math.BigInteger;
 
 /**
  * The NFT DTO.
@@ -17,10 +18,14 @@ import java.io.Serializable;
 public class NFTDTO implements Serializable {
     private static final long serialVersionUID = -837871729886554L;
 
-    private Long nftId;
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private BigInteger nftId;
 
     @NotEmpty(message = "Wallet ID must not be empty")
     private Long walletId;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private String walletAddress;
 
     @NotEmpty(message = "Name must not be empty")
     private String name;
@@ -28,7 +33,7 @@ public class NFTDTO implements Serializable {
     @NotEmpty(message = "Description must not be empty")
     private String description;
 
-    @NotEmpty(message = "Image URL must not be empty")
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String imageUrl;
 
     private String externalLink;

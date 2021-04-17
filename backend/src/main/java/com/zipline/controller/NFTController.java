@@ -1,6 +1,5 @@
 package com.zipline.controller;
 
-import com.zipline.auth.security.services.UserDetailsImpl;
 import com.zipline.auth.security.services.UserDetailsServiceImpl;
 import com.zipline.dto.NFTDTO;
 import com.zipline.exception.ErrorResponse;
@@ -16,15 +15,16 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.List;
+import javax.validation.Valid;
+import java.math.BigInteger;
 
 /**
  * The type NFT controller.
@@ -68,22 +68,36 @@ public class NFTController {
     @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN') or hasRole('USER')")
     public ResponseEntity<?> getNFTs() {
         logger.debug("REST request to get all NFTs of the user");
-        final List<NFTDTO> nftDTOs = new ArrayList<>();
-        final UserDetailsImpl userDetails = userDetailsService.getUser();
-        final List<NFT> nfts = nftService.getNFTsOfUser(userDetails.getId());
-        for (NFT nft : nfts) {
-            NFTDTO nftdto = modelMapper.map(nft, NFTDTO.class);
-            nftdto.setWalletId(nft.getWallet().getWalletId());
-            nftDTOs.add(nftdto);
-        }
-        return new ResponseEntity<>(utilService.getResponseBody(nftDTOs), HttpStatus.OK);
+        return new ResponseEntity<>(utilService.getResponseBody(
+                nftService.getNFTsOfUser(userDetailsService.getUser().getId())), HttpStatus.OK);
+    }
+
+    /**
+     * Gets NFT by ID.
+     *
+     * @param nftId the nft id
+     * @return the NFT
+     */
+    @Operation(summary = "Get NFT by ID", description = "Get NFT by ID", tags = {"nft-controller"})
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful operation",
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = NFT.class))))})
+    @GetMapping("/{nftId}")
+    @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN') or hasRole('USER')")
+    public ResponseEntity<?> getNFTById(final @ApiParam(value = "Id of the NFT to retrieve") @PathVariable(value = "nftId") BigInteger nftId) {
+        return new ResponseEntity<>(utilService.getResponseBody(nftService.getNftById(nftId, true)), HttpStatus.OK);
     }
 
     /**
      * Create NFT entity.
      *
-     * @param nft the NFT
+     * @param image          the image
+     * @param walletId       the wallet id
+     * @param nftName        the nft name
+     * @param nftDescription the nft description
+     * @param externalLink   the external link
      * @return the response entity
+     * @throws Exception the exception
      */
     @Operation(summary = "Create NFT", description = "Create NFT for user on the specified wallet", tags = {"nft-controller"})
     @ApiResponses(value = {
@@ -91,12 +105,21 @@ public class NFTController {
                     content = @Content(array = @ArraySchema(schema = @Schema(implementation = NFTDTO.class)))),
             @ApiResponse(responseCode = "400", description = "Bad request",
                     content = @Content(array = @ArraySchema(schema = @Schema(implementation = ErrorResponse.class))))})
-    @PostMapping(value = "/create", consumes = "application/json")
+    @PostMapping(value = "/create")
     @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN') or hasRole('USER')")
-    public ResponseEntity<?> createNFT(
-            final @ApiParam(value = "NFT parameters") @RequestBody NFTDTO nft) throws Exception {
+    public ResponseEntity<?> createNFT(final @ApiParam(value = "NFT image") @RequestPart(value = "image") @Valid MultipartFile image,
+                                       final @ApiParam(value = "Wallet id") @RequestParam(value = "walletId") Long walletId,
+                                       final @ApiParam(value = "NFT name") @RequestParam(value = "name") String nftName,
+                                       final @ApiParam(value = "NFT description") @RequestParam(value = "description") String nftDescription,
+                                       final @ApiParam(value = "NFT external link") @RequestParam(value = "externalLink", required = false) String externalLink) throws Exception {
         logger.debug("REST request to create a new NFT");
-        final NFT createdNft = nftService.create(modelMapper.map(nft, NFT.class), userDetailsService.getUser().getId(), nft.getWalletId());
-        return new ResponseEntity<>(utilService.getResponseBody(modelMapper.map(createdNft, NFTDTO.class)), HttpStatus.CREATED);
+        final NFTDTO nft = new NFTDTO();
+        nft.setName(nftName);
+        nft.setDescription(nftDescription);
+        if (externalLink != null)
+            nft.setExternalLink(externalLink);
+        nft.setWalletId(walletId);
+        final NFTDTO createdNft = nftService.create(nft, userDetailsService.getUser().getId(), image);
+        return new ResponseEntity<>(utilService.getResponseBody(createdNft), HttpStatus.CREATED);
     }
 }

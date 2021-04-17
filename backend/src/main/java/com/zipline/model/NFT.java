@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.math.BigInteger;
 
 /**
  * The entity NFT.
@@ -19,9 +20,9 @@ import javax.persistence.*;
 public class NFT {
     @Id
     @Column(name = "id", nullable = false)
-    private Long nftId;
+    private BigInteger nftId;
 
-    @Column(name = "name", nullable = false, unique = true)
+    @Column(name = "name", nullable = false)
     private String name;
 
     @Column(name = "description", nullable = false)
@@ -30,10 +31,10 @@ public class NFT {
     @Column(name = "external_link")
     private String externalLink;
 
-    @Column(name = "image_url", nullable = false, unique = true)
+    @Column(name = "image_url", nullable = false)
     private String imageUrl;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinTable(name = "wallet_nfts",
             joinColumns = @JoinColumn(name = "nft_id"),
             inverseJoinColumns = @JoinColumn(name = "wallet_id"))
