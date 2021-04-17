@@ -177,6 +177,7 @@ const Market = ({ positions, publicationPositions }: any) => {
           size="small"
           type="link"
           block
+          disabled={!position.isOpen}
         >
           BUY
         </Button>,
