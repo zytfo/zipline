@@ -1,19 +1,22 @@
-import React, {useEffect, useState} from "react";
+import React, { useEffect, useState } from "react";
 import { Menu } from "antd";
 import { Logo, OTUSHeader } from "./HeaderStyles";
 import auth from "../../services/AuthService";
 import { Link, withRouter } from "react-router-dom";
+import Zipline from "../../../../assets/svg/Zipline.svg";
 
 const Header = (props: any) => {
   const [currentItem, setCurrentItem] = useState([props.location.pathname]);
 
   useEffect(() => {
-      setCurrentItem([props.location.pathname]);
+    setCurrentItem([props.location.pathname]);
   }, [props.location.key]);
 
   return (
     <OTUSHeader>
-      <Logo>ZIPLINE</Logo>
+      <Logo onClick={() => {props.history.push("/")}}>
+        <img alt="logo" src={Zipline} />
+      </Logo>
       <Menu
         theme="dark"
         mode="horizontal"

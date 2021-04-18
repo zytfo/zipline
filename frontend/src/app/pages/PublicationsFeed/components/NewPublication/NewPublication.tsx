@@ -39,7 +39,7 @@ const NewPublication: FunctionComponent<any> = ({ onPublish }) => {
           <Select
             showSearch
             mode="multiple"
-            placeholder="Select Wallet"
+            placeholder="Select NFTs"
             size="large"
             style={{ width: "100%", marginTop: "12px"}}
             value={chosenTrades}

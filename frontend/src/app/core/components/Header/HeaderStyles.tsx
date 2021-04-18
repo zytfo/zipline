@@ -1,14 +1,15 @@
 import styled from "styled-components";
-import {Layout} from "antd";
+import { Layout } from "antd";
 const { Header } = Layout;
 
-export const Logo = styled.span`
-  font-size: 28px;
-  color: #F0B90B;
-  font-family: 'Amaranth', sans-serif;
-  font-weight: 700;
+export const Logo = styled.div`
   float: left;
-  margin: 0 24px 0 0;
+  cursor: pointer;
+
+  img {
+    height: 52px;
+    width: auto;
+  }
 `;
 
 export const OTUSHeader = styled(Header)`
