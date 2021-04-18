@@ -51,6 +51,42 @@ const withdrawalError = {
   duration: 30,
 };
 
+const btn = (
+  <Button
+    type="primary"
+    size="large"
+    onClick={(e) => {
+      e.preventDefault();
+      window.open(
+        'https://testnet.binance.org/faucet-smart',
+        '_blank'
+      );
+    }}
+  >
+    Get test BNB
+  </Button>
+);
+
+const walletCreation = {
+  message: "Wallet creation is being processed",
+  description: "You will be notified when the wallet is created.",
+  duration: 30,
+};
+
+const walletCreationSuccess = {
+  message: "Wallet was created",
+  description:
+    "Withdrawal was successfully created. You can get free test BNBs here https://testnet.binance.org/faucet-smart",
+  duration: 0,
+  btn
+};
+
+const walletCreationError = {
+  message: "Creation failed",
+  description: "Something went wrong and wallet creation was failed.",
+  duration: 30,
+};
+
 const Wallets = () => {
   const [wallets, setWallets] = useState<any[]>([]);
   const [noWallets, setNoWallets] = useState<boolean>(false);
@@ -113,6 +149,7 @@ const Wallets = () => {
   };
 
   const createNewWallet = () => {
+    notification.info(walletCreation);
     walletService
       .newWallet(walletName)
       .then((response) => {
@@ -122,8 +159,12 @@ const Wallets = () => {
         if (noWallets) {
           setNoWallets(false);
         }
+        notification.success(walletCreationSuccess);
       })
-      .catch((error) => backendService.errorHandler(error.response));
+      .catch((error) => {
+        backendService.errorHandler(error.response);
+        notification.error(walletCreationError);
+      });
   };
 
   const deleteWallet = (walletId: number) => {
@@ -202,7 +243,6 @@ const Wallets = () => {
       .catch((error) => {
         backendService.errorHandler(error.response);
         notification.error(withdrawalError);
-
       });
   };
 
@@ -215,7 +255,7 @@ const Wallets = () => {
         <Result
           icon={<WalletOutlined />}
           title="Seems like you don't have wallets"
-          subTitle="Create or import wallet and join our marketplace now!"
+          subTitle="Create wallet and join our marketplace now!"
           extra={[
             <Button
               size="large"
@@ -227,17 +267,6 @@ const Wallets = () => {
               }}
             >
               Create Wallet
-            </Button>,
-            <Button
-              size="large"
-              type="primary"
-              key="import-wallet"
-              onClick={() => {
-                setNewWallet(false);
-                setImportForm(true);
-              }}
-            >
-              Import Wallet
             </Button>,
           ]}
         />
@@ -255,17 +284,17 @@ const Wallets = () => {
           >
             Create Wallet
           </Button>
-          <Button
-            size="large"
-            type="primary"
-            key="import-wallet"
-            onClick={() => {
-              setNewWallet(false);
-              setImportForm(true);
-            }}
-          >
-            Import Wallet
-          </Button>
+          {/*<Button*/}
+          {/*  size="large"*/}
+          {/*  type="primary"*/}
+          {/*  key="import-wallet"*/}
+          {/*  onClick={() => {*/}
+          {/*    setNewWallet(false);*/}
+          {/*    setImportForm(true);*/}
+          {/*  }}*/}
+          {/*>*/}
+          {/*  Import Wallet*/}
+          {/*</Button>*/}
         </ActionSet>
       )}
       {newWallet && (
