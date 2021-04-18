@@ -76,13 +76,13 @@ const walletCreation = {
 const walletCreationSuccess = {
   message: "Wallet was created",
   description:
-    "Withdrawal was successfully created. You can get free test BNBs here https://testnet.binance.org/faucet-smart",
+    "Wallet was successfully created. You can get free test BNBs here https://testnet.binance.org/faucet-smart",
   duration: 0,
   btn
 };
 
 const walletCreationError = {
-  message: "Creation failed",
+  message: "Wallet was NOT created",
   description: "Something went wrong and wallet creation was failed.",
   duration: 30,
 };
