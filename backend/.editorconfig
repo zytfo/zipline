@@ -1,0 +1,27 @@
+# EditorConfig helps developers define and maintain consistent
+# coding styles between different editors and IDEs
+# editorconfig.org
+
+root = true
+
+[*]
+
+# We recommend you to keep these unchanged
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.yml]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+# docker run -d --name zipline-postgres-db --env 'POSTGRES_USER=postgres' --env 'POSTGRES_PASSWORD=admin!' --env 'POSTGRES_DB=db' --env 'PG_TRUST_LOCALNET=true' -p 5432:5432 postgres:latest
+# docker run -d --name db --env 'POSTGRES_USER=postgres' --env 'POSTGRES_PASSWORD=admin!' --env 'POSTGRES_DB=db' --env 'PG_TRUST_LOCALNET=true' -p 5432:5432 postgres:latest
+# docker run -d -p 9090:9090 -v $PWD/prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus --config.file=/etc/prometheus/prometheus.yml
+# docker run -d -p 3000:3000 grafana/grafana
+# docker exec -t adbaba14ad8b pg_dump -c -U postgres db > dump_$(date +%Y-%m-%d_%H_%M_%S).sql
+# docker exec -t adbaba14ad8b pg_dump -c -U postgres db > dump_$(date +%Y-%m-%d_%H_%M_%S).sql
+# cat ./dump/dump_2021-03-12_00_30_15.sql | docker exec -i 1fe413a3c8ae psql -U postgres -d db
